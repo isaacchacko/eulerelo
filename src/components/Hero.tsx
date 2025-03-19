@@ -11,7 +11,7 @@ const Hero: React.FC = () => {
         </h1>
         
         <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          Race against opponents in a wide range of math topics, from addition and multiplication, to calculus, differential equations, and more. 
+          Race head-to-head against opponents in a wide range of math topics, from addition and multiplication, to calculus, differential equations, and more. 
           Climb the ranks and become the ultimate math champion!
         </p>
 

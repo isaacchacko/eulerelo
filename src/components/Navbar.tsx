@@ -1,5 +1,5 @@
-
 import React from 'react';
+import Link from 'next/link';
 
 const Navbar: React.FC = () => {
   return (
@@ -7,28 +7,36 @@ const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-blue-600">Eulerelo</h1>
+            <Link href="/" className="text-2xl font-bold text-blue-600">
+              Eulerelo
+            </Link>
           </div>
 
           <div className="hidden md:flex space-x-8">
-            <a href="#" className="text-gray-600 hover:text-blue-600">Leaderboard</a>
-            <a href="#" className="text-gray-600 hover:text-blue-600">About</a>
-            <a href="#" className="text-gray-600 hover:text-blue-600">Practice</a>
+            <Link href="/leaderboard" className="text-gray-600 hover:text-blue-600">
+              Leaderboard
+            </Link>
+            <Link href="/about" className="text-gray-600 hover:text-blue-600">
+              About
+            </Link>
+            <Link href="/practice" className="text-gray-600 hover:text-blue-600">
+              Practice
+            </Link>
           </div>
 
           <div className="flex items-center space-x-4">
-            <a 
+            <Link 
               href="/api/auth/signin"
               className="px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
             >
               Sign In
-            </a>
-            <a
+            </Link>
+            <Link
               href="/api/auth/signup"
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Sign Up
-            </a>
+            </Link>
           </div>
         </div>
       </div>
