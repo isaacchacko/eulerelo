@@ -24,18 +24,12 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center">
             <Link 
-              href="/api/auth/signin"
-              className="px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/api/auth/signup"
+              href="/login"
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Sign Up
+              Sign In / Sign Up
             </Link>
           </div>
         </div>
