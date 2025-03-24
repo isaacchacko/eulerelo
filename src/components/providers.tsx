@@ -7,6 +7,7 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
+import { ThemeProvider } from "@/app/providers";
 import { ErrorBoundary } from "react-error-boundary";
 
 /**
@@ -38,14 +39,14 @@ function ErrorFallback({ error }: { error: Error }) {
  * @param props - Component props containing children to be wrapped
  * @returns Wrapped application with all necessary providers
  */
-export default function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    // SessionProvider enables authentication state management throughout the app
-    <SessionProvider refetchInterval={0}>
-      {/* ErrorBoundary catches and displays runtime errors gracefully */}
-      <ErrorBoundary FallbackComponent={ErrorFallback}>
-        {children}
-      </ErrorBoundary>
+    <SessionProvider>
+      <ThemeProvider>
+        <ErrorBoundary FallbackComponent={ErrorFallback}>
+          {children}
+        </ErrorBoundary>
+      </ThemeProvider>
     </SessionProvider>
   );
 } 

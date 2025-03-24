@@ -9,6 +9,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { ThemeToggle } from "./ThemeToggle";
 
 /**
  * Navigation Bar Component
@@ -66,17 +67,21 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="bg-white shadow-lg">
+    <nav className="bg-white dark:bg-gray-800 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo and brand */}
-          <div className="flex">
+          <div className="flex items-center">
             <Link
               href="/"
-              className="flex-shrink-0 flex items-center text-xl font-bold text-blue-600"
+              className="flex-shrink-0 flex items-center text-xl font-bold text-gray-900 dark:text-white"
             >
               Eulerelo
             </Link>
+            {/* Theme Toggle moved here */}
+            <div className="ml-4">
+              <ThemeToggle />
+            </div>
           </div>
 
           {/* Desktop navigation */}
@@ -85,54 +90,56 @@ export default function Navbar() {
             <div className="flex space-x-8">
               <Link
                 href="/"
-                className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                className="text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
               >
                 Home
               </Link>
               <Link
                 href="/problems"
-                className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                className="text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
               >
                 Problems
               </Link>
               <Link
                 href="/leaderboard"
-                className="text-gray-500 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                className="text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
               >
                 Leaderboard
               </Link>
             </div>
 
-            {/* Authentication buttons */}
-            <div className="ml-4">
+            {/* Right side items */}
+            <div className="flex items-center space-x-4">
+              {/* User menu */}
               {session ? (
                 <div className="relative" ref={profileRef}>
                   <button
                     onClick={toggleProfile}
-                    className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 focus:outline-none"
+                    className="flex items-center space-x-2 text-gray-900 dark:text-white hover:text-gray-500 dark:hover:text-gray-300"
                   >
-                    <span className="text-sm font-medium">{session.user?.name || session.user?.email}</span>
+                    <span>{session.user?.name}</span>
                     <svg
-                      className={`h-5 w-5 transform ${isProfileOpen ? 'rotate-180' : ''}`}
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
                       <path
-                        fillRule="evenodd"
-                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                        clipRule="evenodd"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
                       />
                     </svg>
                   </button>
 
                   {/* Profile dropdown menu */}
                   {isProfileOpen && (
-                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5">
                       <div className="py-1" role="menu">
                         <Link
                           href="/profile"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                           role="menuitem"
                           onClick={() => setIsProfileOpen(false)}
                         >
@@ -143,7 +150,7 @@ export default function Navbar() {
                             handleSignOut();
                             setIsProfileOpen(false);
                           }}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                           role="menuitem"
                         >
                           Sign out
@@ -153,14 +160,12 @@ export default function Navbar() {
                   )}
                 </div>
               ) : (
-                <div className="flex items-center space-x-4">
-                  <Link
-                    href="/login"
-                    className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium"
-                  >
-                    Sign in
-                  </Link>
-                </div>
+                <Link
+                  href="/auth/signin"
+                  className="text-gray-900 dark:text-white hover:text-gray-500 dark:hover:text-gray-300"
+                >
+                  Sign in
+                </Link>
               )}
             </div>
           </div>
@@ -169,7 +174,7 @@ export default function Navbar() {
           <div className="flex items-center sm:hidden">
             <button
               onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-gray-500 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
             >
               <span className="sr-only">Open main menu</span>
               {/* Menu icon */}
@@ -208,26 +213,26 @@ export default function Navbar() {
       </div>
 
       {/* Mobile menu */}
-      <div className={`${isMenuOpen ? "block" : "hidden"} sm:hidden`}>
+      <div className={`${isMenuOpen ? "block" : "hidden"} sm:hidden bg-white dark:bg-gray-800`}>
         <div className="pt-2 pb-3 space-y-1">
           {/* Mobile navigation links */}
           <Link
             href="/"
-            className="block px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            className="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
             onClick={() => setIsMenuOpen(false)}
           >
             Home
           </Link>
           <Link
             href="/problems"
-            className="block px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            className="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
             onClick={() => setIsMenuOpen(false)}
           >
             Problems
           </Link>
           <Link
             href="/leaderboard"
-            className="block px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+            className="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
             onClick={() => setIsMenuOpen(false)}
           >
             Leaderboard
@@ -238,7 +243,7 @@ export default function Navbar() {
             <>
               <Link
                 href="/profile"
-                className="block px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                className="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Your Profile
@@ -248,7 +253,7 @@ export default function Navbar() {
                   handleSignOut();
                   setIsMenuOpen(false);
                 }}
-                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 Sign out
               </button>
@@ -257,7 +262,7 @@ export default function Navbar() {
             <>
               <Link
                 href="/login"
-                className="block px-3 py-2 text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                className="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Sign in

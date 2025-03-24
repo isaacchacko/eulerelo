@@ -10,7 +10,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
-import Providers from "@/components/providers";
+import { Providers } from "@/components/providers";
 
 // Initialize the Inter font from Google Fonts
 const inter = Inter({ subsets: ["latin"] });
@@ -52,20 +52,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        {/* Wrap the application with necessary providers */}
+      <body className={`${inter.className} min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200`}>
         <Providers>
-          {/* Main application structure */}
-          <div className="min-h-screen flex flex-col">
-            {/* Navigation bar at the top */}
+          <div className="flex flex-col min-h-screen">
             <Navbar />
-            
-            {/* Main content area */}
-            <main className="flex-grow container mx-auto px-4 py-8">
+            <main className="flex-grow">
               {children}
             </main>
-            
-            {/* Footer at the bottom */}
             <Footer />
           </div>
         </Providers>

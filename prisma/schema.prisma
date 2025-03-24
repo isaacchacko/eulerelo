@@ -1,40 +1,19 @@
-// Prisma Schema
-// This file defines the database schema for the application.
-// It includes all models, their relationships, and field definitions.
-
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-// Specify the Prisma Client generator
 generator client {
   provider = "prisma-client-js"
 }
 
-// Define the database connection
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// User Model
-// Represents a user in the application with authentication and profile information
 model User {
-  // Unique identifier for the user
   id             String   @id @default(cuid())
-  
-  // User's display name (optional)
   name           String?
-  
-  // User's email address (unique)
   email          String   @unique
-  
-  // Hashed password for authentication
   password       String
-  
-  // Timestamps for record creation and updates
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  elo            Int      @default(1000)
+  problemsSolved Int      @default(0)
 }
