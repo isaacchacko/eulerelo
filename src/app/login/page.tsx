@@ -1,139 +1,165 @@
+/**
+ * Login Page Component
+ * Handles user authentication with email and password.
+ * Provides form validation and error handling.
+ */
 
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
 
-export default function Auth() {
-  const [isSignIn, setIsSignIn] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [emailError, setEmailError] = useState('');
+/**
+ * Form data interface for the login form
+ */
+interface LoginFormData {
+  email: string;
+  password: string;
+}
 
-  const validateEmail = (email: string) => {
-    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return re.test(String(email).toLowerCase());
+/**
+ * Login Page Component
+ * Provides a form for user authentication with validation and error handling
+ * 
+ * @returns The login page with authentication form
+ */
+export default function LoginPage() {
+  // State for form data and error handling
+  const [formData, setFormData] = useState<LoginFormData>({
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+
+  // Get router instance for navigation
+  const router = useRouter();
+
+  /**
+   * Handle form input changes
+   * Updates the form state with new input values
+   * 
+   * @param e - Change event from input fields
+   */
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value);
-    if (!validateEmail(e.target.value)) {
-      setEmailError('Please enter a valid email address');
-    } else {
-      setEmailError('');
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  /**
+   * Handle form submission
+   * Authenticates user credentials and handles the sign-in process
+   * 
+   * @param e - Submit event from the form
+   */
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateEmail(email)) {
-      setEmailError('Please enter a valid email address');
-      return;
+    setError("");
+    setLoading(true);
+
+    try {
+      // Attempt to sign in with credentials
+      const result = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
+
+      // Handle authentication errors
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+
+      // Redirect to dashboard on successful login
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to sign in");
+    } finally {
+      setLoading(false);
     }
-    // Handle form submission
-    console.log(isSignIn ? 'Sign In' : 'Sign Up', { email, password, name });
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-grow flex items-center justify-center bg-gray-100 px-4">
-        <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-md">
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-              {isSignIn ? 'Sign in to your account' : 'Create your account'}
-            </h2>
-          </div>
-          {emailError && (
-            <div className="text-red-500 text-sm text-center">{emailError}</div>
-          )}
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="rounded-md shadow-sm -space-y-px">
-              {!isSignIn && (
-                <div>
-                  <label htmlFor="name" className="sr-only">
-                    Name
-                  </label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    autoComplete="name"
-                    required
-                    className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </div>
-              )}
-              <div>
-                <label htmlFor="email-address" className="sr-only">
-                  Email address
-                </label>
-                <input
-                  id="email-address"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                    emailError ? 'border-red-500' : 'border-gray-300'
-                  } placeholder-gray-500 text-gray-900 ${
-                    isSignIn ? 'rounded-t-md' : ''
-                  } focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
-                  placeholder="Email address"
-                  value={email}
-                  onChange={handleEmailChange}
-                />
-              </div>
-              <div>
-                <label htmlFor="password" className="sr-only">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete={isSignIn ? 'current-password' : 'new-password'}
-                  required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {/* Header section */}
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Or{" "}
+            <Link
+              href="/signup"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
+              create a new account
+            </Link>
+          </p>
+        </div>
+
+        {/* Login form */}
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="rounded-md shadow-sm -space-y-px">
+            {/* Email input */}
+            <div>
+              <label htmlFor="email" className="sr-only">
+                Email address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Email address"
+                value={formData.email}
+                onChange={handleChange}
+              />
             </div>
 
+            {/* Password input */}
             <div>
-              <button
-                type="submit"
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                {isSignIn ? 'Sign in' : 'Sign up'}
-              </button>
+              <label htmlFor="password" className="sr-only">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+              />
             </div>
-          </form>
+          </div>
+
+          {/* Error message display */}
+          {error && (
+            <div className="text-red-500 text-sm text-center">{error}</div>
+          )}
+
+          {/* Submit button */}
           <div>
             <button
-              className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+              type="submit"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSignIn ? 'Sign in' : 'Sign up'} with Google
+              {loading ? "Signing in..." : "Sign in"}
             </button>
           </div>
-          <div className="text-center">
-            <button
-              className="text-blue-600 hover:text-blue-800"
-              onClick={() => setIsSignIn(!isSignIn)}
-            >
-              {isSignIn ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
-            </button>
-          </div>
-        </div>
-      </main>
-      <Footer />
+        </form>
+      </div>
     </div>
   );
 }

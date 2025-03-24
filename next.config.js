@@ -1,7 +1,5 @@
-// next.config.ts
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   webpack: (config) => {
     // Externalize bcrypt modules
     config.externals.push('bcrypt', 'bcryptjs');
@@ -38,4 +36,4 @@ const nextConfig: NextConfig = {
   }
 };
 
-export default nextConfig;
+module.exports = nextConfig; 
