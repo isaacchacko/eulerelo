@@ -161,7 +161,7 @@ export default function Navbar() {
                 </div>
               ) : (
                 <Link
-                  href="/auth/signin"
+                  href="/login"
                   className="text-gray-900 dark:text-white hover:text-gray-500 dark:hover:text-gray-300"
                 >
                   Sign in

@@ -31,9 +31,6 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       // Required for secure cookie handling
-      allowedForwardedHosts: [
-        process.env.NEXTAUTH_URL?.replace(/https?:\/\//, '') || 'localhost:3000'
-      ]
     }
   }
 };

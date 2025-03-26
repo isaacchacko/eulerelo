@@ -1,14 +1,17 @@
 import { getServerSession } from "next-auth/next";
+import { authConfig } from "../auth/auth.config";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { config } from "../auth/auth.config";
 
 export async function GET() {
-  const session = await getServerSession(config);
+  const session = await getServerSession({
+    ...authConfig,
+    providers: [...authConfig.providers]
+  });
 
   if (!session?.user) {
     return new NextResponse(
-      JSON.stringify({ error: "You must be logged in to access this resource" }),
+      JSON.stringify({ error: "You must be logged in to access this route" }),
       { status: 401 }
     );
   }

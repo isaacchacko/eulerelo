@@ -4,68 +4,67 @@
  * It intercepts all requests and ensures proper authentication for protected routes.
  */
 
-import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 /**
  * Configuration for the middleware
  * Specifies which routes should be protected and which should be public
  */
-export default withAuth(
-  // Middleware function that runs on every request
-  function middleware(req) {
-    // Get the pathname from the request URL
-    const pathname = req.nextUrl.pathname;
+export async function middleware(request: NextRequest) {
+  const token = await getToken({ req: request });
+  const pathname = request.nextUrl.pathname;
 
-    // Define protected routes that require authentication
-    const protectedRoutes = [
-      "/dashboard",
-      "/profile",
-      "/settings",
-      "/api/protected",
-      "/api/profile",
-    ];
+  // Define protected routes that require authentication
+  const protectedRoutes = ["/profile", "/leaderboard"];
 
-    // Define auth-only routes that should redirect to profile if authenticated
-    const authOnlyRoutes = ["/login", "/signup"];
+  // Define auth-only routes that should redirect to profile if authenticated
+  const authOnlyRoutes = ["/login", "/signup"];
 
-    // Check if the current path is a protected route
-    const isProtectedRoute = protectedRoutes.some((route) =>
-      pathname.startsWith(route)
-    );
+  // Define public routes that should always be accessible
+  const publicRoutes = [
+    "/",
+    "/about",
+    "/contact",
+    "/problems",
+    "/leaderboard",
+    "/api/problems",
+    "/api/leaderboard",
+  ];
 
-    // Check if the current path is an auth-only route
-    const isAuthOnlyRoute = authOnlyRoutes.some((route) =>
-      pathname.startsWith(route)
-    );
+  // Check if the current path is a protected route
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
 
-    // If the route is protected and user is not authenticated,
-    // redirect to the login page
-    if (isProtectedRoute && !req.nextauth.token) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
+  // Check if the current path is an auth-only route
+  const isAuthOnlyRoute = authOnlyRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
 
-    // If the route is auth-only (login/signup) and user is authenticated,
-    // redirect to the profile page
-    if (isAuthOnlyRoute && req.nextauth.token) {
-      return NextResponse.redirect(new URL("/profile", req.url));
-    }
+  // Check if the current path is a public route
+  const isPublicRoute = publicRoutes.some((route) =>
+    pathname.startsWith(route)
+  );
 
-    // Allow the request to proceed if no redirects are needed
-    return NextResponse.next();
-  },
-  {
-    // Configuration options for the middleware
-    callbacks: {
-      // Function to determine if the user is authorized
-      authorized: ({ token }) => !!token,
-    },
-    // Pages that should be accessible without authentication
-    pages: {
-      signIn: "/login",
-    },
+  // If the route is protected and user is not authenticated,
+  // redirect to the login page
+  if (isProtectedRoute && !token) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(loginUrl);
   }
-);
+
+  // If the route is auth-only (login/signup) and user is authenticated,
+  // redirect to the profile page
+  if (isAuthOnlyRoute && token) {
+    return NextResponse.redirect(new URL("/profile", request.url));
+  }
+
+  // Allow the request to proceed if no redirects are needed
+  return NextResponse.next();
+}
 
 /**
  * Configure which routes the middleware should run on

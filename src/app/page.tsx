@@ -26,10 +26,10 @@ function FeatureCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="relative p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-      <div className="text-blue-600 mb-4">{icon}</div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600">{description}</p>
+    <div className="relative p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+      <div className="text-blue-600 dark:text-blue-400 mb-4">{icon}</div>
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{title}</h3>
+      <p className="text-gray-600 dark:text-gray-300">{description}</p>
     </div>
   );
 }
@@ -47,13 +47,13 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-900 dark:to-blue-950 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl font-bold sm:text-5xl md:text-6xl">
               Welcome to Eulerelo
             </h1>
-            <p className="mt-6 text-xl text-blue-100 max-w-3xl mx-auto">
+            <p className="mt-6 text-xl text-blue-100 dark:text-blue-200 max-w-3xl mx-auto">
               Practice competitive programming problems, track your progress, and
               compete with others in a fun and engaging way.
             </p>
@@ -61,14 +61,14 @@ export default function HomePage() {
               {session ? (
                 <Link
                   href="/problems"
-                  className="bg-white text-blue-600 px-8 py-3 rounded-md font-semibold hover:bg-blue-50 transition-colors"
+                  className="bg-white text-blue-600 px-8 py-3 rounded-md font-semibold hover:bg-blue-50 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700 transition-colors"
                 >
                   Start Practicing
                 </Link>
               ) : (
                 <Link
                   href="/signup"
-                  className="bg-white text-blue-600 px-8 py-3 rounded-md font-semibold hover:bg-blue-50 transition-colors"
+                  className="bg-white text-blue-600 px-8 py-3 rounded-md font-semibold hover:bg-blue-50 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700 transition-colors"
                 >
                   Get Started
                 </Link>
@@ -79,13 +79,13 @@ export default function HomePage() {
       </div>
 
       {/* Features section */}
-      <div className="py-24 bg-gray-50">
+      <div className="py-24 bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               Why Choose Eulerelo?
             </h2>
-            <p className="mt-4 text-lg text-gray-600">
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
               Everything you need to improve your competitive programming skills
             </p>
           </div>
@@ -156,13 +156,13 @@ export default function HomePage() {
       </div>
 
       {/* CTA section */}
-      <div className="bg-white">
+      <div className="bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               Ready to Start Your Journey?
             </h2>
-            <p className="mt-4 text-lg text-gray-600">
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
               Join thousands of programmers who are improving their skills with
               Eulerelo.
             </p>
@@ -170,14 +170,14 @@ export default function HomePage() {
               {session ? (
                 <Link
                   href="/problems"
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
                 >
                   View Problems
                 </Link>
               ) : (
                 <Link
                   href="/signup"
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
                 >
                   Create Account
                 </Link>

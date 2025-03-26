@@ -59,11 +59,11 @@ export default function ProfilePage() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading profile...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-300">Loading profile...</p>
           </div>
         </div>
       </div>
@@ -72,14 +72,14 @@ export default function ProfilePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <div className="text-red-600 text-xl mb-4">Error</div>
-            <p className="text-gray-600">{error}</p>
+            <div className="text-red-600 dark:text-red-400 text-xl mb-4">Error</div>
+            <p className="text-gray-600 dark:text-gray-300">{error}</p>
             <button
               onClick={() => router.refresh()}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
             >
               Try Again
             </button>
@@ -91,32 +91,32 @@ export default function ProfilePage() {
 
   return (
     <AuthProtected>
-      <div className="min-h-screen bg-gray-50 py-12">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white shadow rounded-lg p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Profile</h1>
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Profile</h1>
             
             <div className="space-y-6">
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <p className="mt-1 text-lg text-gray-900">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                <p className="mt-1 text-lg text-gray-900 dark:text-white">
                   {profile?.name || "Not set"}
                 </p>
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <p className="mt-1 text-lg text-gray-900">{profile?.email}</p>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                <p className="mt-1 text-lg text-gray-900 dark:text-white">{profile?.email}</p>
               </div>
 
               {/* Account Creation Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Member Since
                 </label>
-                <p className="mt-1 text-lg text-gray-900">
+                <p className="mt-1 text-lg text-gray-900 dark:text-white">
                   {profile?.createdAt
                     ? new Date(profile.createdAt).toLocaleDateString()
                     : "N/A"}
@@ -125,10 +125,10 @@ export default function ProfilePage() {
 
               {/* Last Updated */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Last Updated
                 </label>
-                <p className="mt-1 text-lg text-gray-900">
+                <p className="mt-1 text-lg text-gray-900 dark:text-white">
                   {profile?.updatedAt
                     ? new Date(profile.updatedAt).toLocaleDateString()
                     : "N/A"}
