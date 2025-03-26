@@ -43,12 +43,14 @@ export const authConfig = {
         };
       }
     })
-  ] as const,
+  ],
   session: {
-    strategy: "jwt" as const
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
-    signIn: "/login"
+    signIn: "/login",
+    error: "/login",
   },
   callbacks: {
     async session({ session, token }) {
@@ -56,7 +58,14 @@ export const authConfig = {
         session.user.id = token.sub!;
       }
       return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
     }
   },
-  debug: process.env.NODE_ENV === "development"
+  debug: process.env.NODE_ENV === "development",
+  secret: process.env.NEXTAUTH_SECRET,
 }; 
