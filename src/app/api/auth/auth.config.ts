@@ -6,6 +6,7 @@ import { verifyPassword } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
+// @ts-ignore
 export const authConfig = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -45,7 +46,7 @@ export const authConfig = {
     })
   ],
   session: {
-    strategy: "jwt",
+    strategy: "jwt" as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
