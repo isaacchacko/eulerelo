@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Define protected routes that require authentication
-  const protectedRoutes = ["/profile", "/leaderboard"];
+  const protectedRoutes = ["/profile"];
 
   // Define auth-only routes that should redirect to profile if authenticated
   const authOnlyRoutes = ["/login", "/signup"];
