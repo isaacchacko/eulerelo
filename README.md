@@ -13,7 +13,7 @@ A competitive programming platform that helps users track their progress and com
 
 ## Tech Stack
 
-- Next.js 14 with App Router
+- Next.js 15 with App Router
 - TypeScript
 - NextAuth.js for authentication
 - Prisma with PostgreSQL
