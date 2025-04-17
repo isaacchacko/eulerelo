@@ -5,6 +5,7 @@
  * like the navigation bar and footer.
  */
 
+import { Analytics } from '@vercel/analytics/react';
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -58,6 +59,7 @@ export default function RootLayout({
             <Navbar />
             <main className="flex-grow">
               {children}
+              <Analytics />
             </main>
             <Footer />
           </div>
