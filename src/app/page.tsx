@@ -45,10 +45,10 @@ export default function HomePage() {
             <div className="mt-10">
               {session ? (
                 <Link
-                  href="/problems"
+                  href="/duel"
                   className="bg-white text-blue-600 px-8 py-3 rounded-md font-semibold hover:bg-blue-50 dark:bg-gray-800 dark:text-blue-400 dark:hover:bg-gray-700 transition-colors"
                 >
-                  Start Practicing
+                  Start a Duel
                 </Link>
               ) : (
                 <Link
