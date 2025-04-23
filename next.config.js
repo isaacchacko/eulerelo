@@ -1,10 +1,22 @@
+// next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Existing config
   webpack: (config) => {
-    // Externalize bcrypt modules
     config.externals.push('bcrypt', 'bcryptjs');
     return config;
   },
+  
+  // Add Socket.io rewrites
+  async rewrites() {
+    return [
+      {
+        source: "/api/socket/:path*",
+        destination: "/api/socket/io",
+      },
+    ];
+  },
+
   headers: async () => {
     return [
       {
@@ -21,14 +33,22 @@ const nextConfig = {
           {
             key: 'X-Frame-Options',
             value: 'SAMEORIGIN'
+          },
+          {
+            key: 'Upgrade',
+            value: 'websocket'
+          },
+          {
+            key: 'Connection',
+            value: 'Upgrade'
           }
         ]
       }
     ];
   },
+
   experimental: {
     serverActions: {
-      // Required for secure cookie handling
       allowedForwardedHosts: [
         process.env.NEXTAUTH_URL?.replace(/https?:\/\//, '') || 'localhost:3000'
       ]
@@ -36,4 +56,4 @@ const nextConfig = {
   }
 };
 
-module.exports = nextConfig; 
+module.exports = nextConfig;
