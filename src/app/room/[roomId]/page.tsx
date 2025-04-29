@@ -11,6 +11,13 @@ export default function RoomPage() {
   const [input, setInput] = useState('');
   const [answerInput, setAnswerInput] = useState('');
   const socketRef = useRef<Socket | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -62,6 +69,7 @@ export default function RoomPage() {
             {messages.map((msg, idx) => (
               <div key={idx} className="mb-1">{msg}</div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
           <div className="flex gap-2">
             <input
