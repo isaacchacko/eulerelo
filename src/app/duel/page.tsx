@@ -25,14 +25,7 @@ export default function DuelPage() {
   const [isSearching, setIsSearching] = useState(false);
 
   const handleFindMatch = () => {
-    setIsSearching(true);
-    const socket = connectSocket();
-
-    socket.emit("find-match");
-
-    socket.on("room-joined", (roomId: string) => {
-      router.push(`/duel/${roomId}`);
-    });
+    router.push(`/matchmaking`);
   };
 
   if (status === "loading") {

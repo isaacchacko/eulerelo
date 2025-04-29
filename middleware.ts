@@ -7,6 +7,8 @@ const protectedRoutes = [
   '/profile',
   '/practice',
   '/leaderboard',
+  '/matchmaking',
+  '/room',
 ];
 
 // Define public routes that should redirect to home if user is authenticated
