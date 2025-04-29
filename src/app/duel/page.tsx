@@ -25,6 +25,7 @@ export default function DuelPage() {
   const [isSearching, setIsSearching] = useState(false);
 
   const handleFindMatch = () => {
+    setIsSearching(true);
     router.push(`/matchmaking`);
   };
 
