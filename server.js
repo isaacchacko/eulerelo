@@ -34,6 +34,11 @@ io.on('connection', (socket) => {
     console.log(`Message to ${roomId}: ${message}`);
   });
 
+  socket.on('buzz', ({ roomId, answer }) => {
+    io.to(roomId).emit('buzz', answer);
+    console.log(`Buzz to ${roomId}: ${answer}`);
+  });
+
   socket.on('disconnect', () => {
     queue = queue.filter(id => id !== socket.id);
   });
