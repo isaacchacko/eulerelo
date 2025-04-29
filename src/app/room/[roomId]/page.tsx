@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 
+
 export default function RoomPage() {
   const params = useParams();
   const roomId = params.roomId as string;
@@ -12,7 +13,8 @@ export default function RoomPage() {
   const [answerInput, setAnswerInput] = useState('');
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
+  const [isBuzzCooldown, setIsBuzzCooldown] = useState(false);
+  
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -48,6 +50,8 @@ export default function RoomPage() {
       setInput('');
     }
   };
+
+  //handles sending the buzzes
   const sendBuzz = () => {
     if (answerInput.trim() && socketRef.current) {
       socketRef.current.emit('buzz', {
@@ -55,12 +59,20 @@ export default function RoomPage() {
         answer: answerInput
       });
       setAnswerInput('');
+      setIsBuzzCooldown(true);
+
+      //the buzz timer so we can only send buzzes every 3 seconds max
+      setTimeout(() => {
+        setIsBuzzCooldown(false);
+      }, 3000);
     }
   };
+
   return (
-    <div className="max-w-xl mx-auto p-4">
+    <div className="max-w-xl mx-auto p-4"> 
       <h2 className="text-xl mb-2">Room: {roomId}</h2>
-      <div className="flex">
+      {/* put everything in a big div */}
+      <div className="flex"> 
         <div className="w-3/4">
           MATH
         </div>
@@ -89,21 +101,26 @@ export default function RoomPage() {
         </div>
       </div>
       <div>
-          <div className="flex gap-2 mt-2">
-            <input
-              className="flex-1 border rounded p-2"
-              value={answerInput}
-              onChange={e => setAnswerInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendBuzz()}
-              placeholder="Type an answer..."
-            />
-            <button
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-              onClick={sendBuzz}
-            >
-              Buzz
-            </button>
-            </div>
+        <div className="flex gap-2 mt-2">
+          <input
+            className="flex-1 border rounded p-2"
+            value={answerInput}
+            onChange={e => setAnswerInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && sendBuzz()}
+            placeholder="Type an answer..."
+          />
+          <button
+          //the button should gray out when disabled
+            className={`px-4 py-2 rounded ${isBuzzCooldown
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 text-white'
+              }`}
+            onClick={sendBuzz}
+            disabled={isBuzzCooldown}
+          >
+            {isBuzzCooldown ? 'Wait...' : 'Buzz'}
+          </button>
+        </div>
       </div>
     </div>
   );
