@@ -29,14 +29,14 @@ io.on('connection', (socket) => {
     console.log(`User ${socket.id} joined room ${roomId}`);
   });
 
-  socket.on('message', ({ roomId, message }) => {
-    io.to(roomId).emit('message', message);
-    console.log(`Message to ${roomId}: ${message}`);
+  socket.on('chat', ({ roomId, text, username }) => {
+    io.to(roomId).emit('chat', text, username);
+    console.log(`Chat message by user ${username} to ${roomId}: ${text}`);
   });
 
-  socket.on('buzz', ({ roomId, answer }) => {
-    io.to(roomId).emit('buzz', answer);
-    console.log(`Buzz to ${roomId}: ${answer}`);
+  socket.on('buzz', ({ roomId, answer, username }) => {
+    io.to(roomId).emit('buzz', answer, username);
+    console.log(`Buzz by user ${username} to ${roomId}: ${answer}`);
   });
 
   socket.on('disconnect', () => {

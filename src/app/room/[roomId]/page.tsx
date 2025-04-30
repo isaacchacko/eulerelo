@@ -3,18 +3,28 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
+import { useSession } from 'next-auth/react';
 
+type MessageType = 'chat' | 'buzz';
+
+interface ChatMessage {
+  text: string;
+  type: MessageType;
+}
 
 export default function RoomPage() {
+
+  const { data: session } = useSession();
+
   const params = useParams();
   const roomId = params.roomId as string;
-  const [messages, setMessages] = useState<string[]>([]);
-  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
   const [answerInput, setAnswerInput] = useState('');
   const socketRef = useRef<Socket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [isBuzzCooldown, setIsBuzzCooldown] = useState(false);
-  
+
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -27,12 +37,14 @@ export default function RoomPage() {
 
       socketRef.current.emit('joinRoom', roomId);
 
-      socketRef.current.on('message', (msg: string) => {
-        setMessages(prev => [...prev, msg]);
+      socketRef.current.on('chat', (chat_message: string, username: string) => {
+        const new_message: ChatMessage = {text: `${username}: ${chat_message}`, type: 'chat'};
+        setMessages(prev => [...prev, new_message]);
       });
 
-      socketRef.current.on('buzz', (buzzMsg: string) => {
-        setMessages(prev => [...prev, `Buzz: ${buzzMsg}`]);
+      socketRef.current.on('buzz', (buzz_message: string, username: string) => {
+        const new_message: ChatMessage = {text: `${username} answered: ${buzz_message}`, type: 'buzz'};
+        setMessages(prev => [...prev, new_message]);
       });
 
       return () => {
@@ -41,14 +53,16 @@ export default function RoomPage() {
     }
   }, [roomId]);
 
-  const sendMessage = () => {
-    if (input.trim() && socketRef.current) {
-      socketRef.current.emit('message', {
+  const sendChat = () => {
+    if (chatInput.trim() && socketRef.current) {
+      socketRef.current.emit('chat', {
         roomId,
-        message: input
+        text: chatInput,
+        username: session.user?.name,
       });
-      setInput('');
     }
+
+    setChatInput('');
   };
 
   //handles sending the buzzes
@@ -56,7 +70,8 @@ export default function RoomPage() {
     if (answerInput.trim() && socketRef.current) {
       socketRef.current.emit('buzz', {
         roomId,
-        answer: answerInput
+        answer: answerInput,
+        username: session.user?.name
       });
       setAnswerInput('');
       setIsBuzzCooldown(true);
@@ -79,21 +94,25 @@ export default function RoomPage() {
         <div>
           <div className="border rounded p-2 h-64 overflow-y-auto mb-2 bg-gray-100">
             {messages.map((msg, idx) => (
-              <div key={idx} className="mb-1">{msg}</div>
+              msg.type == 'buzz' ? 
+                <div key={idx} className="mb-1 text-green-500">{msg.text}</div>
+                :
+                <div key={idx} className="mb-1">{msg.text}</div>
+
             ))}
             <div ref={messagesEndRef} />
           </div>
           <div className="flex gap-2">
             <input
               className="flex-1 border rounded p-2"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendMessage()}
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && sendChat()}
               placeholder="Type a message..."
             />
             <button
               className="bg-blue-500 text-white px-4 py-2 rounded"
-              onClick={sendMessage}
+              onClick={sendChat}
             >
               Send
             </button>
@@ -110,11 +129,11 @@ export default function RoomPage() {
             placeholder="Type an answer..."
           />
           <button
-          //the button should gray out when disabled
+            //the button should gray out when disabled
             className={`px-4 py-2 rounded ${isBuzzCooldown
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-500 text-white'
-              }`}
+? 'bg-gray-400 cursor-not-allowed'
+: 'bg-blue-500 text-white'
+}`}
             onClick={sendBuzz}
             disabled={isBuzzCooldown}
           >
