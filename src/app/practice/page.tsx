@@ -1,0 +1,112 @@
+'use client';
+
+import { useEffect, useState, useRef } from 'react';
+import { useParams } from 'next/navigation';
+import { io, Socket } from 'socket.io-client';
+import { useSession } from 'next-auth/react';
+import mathPhoto from '../../assets/mathProb.png';
+
+type MessageType = 'chat' | 'buzz';
+
+interface ChatMessage {
+  text: string;
+  type: MessageType;
+}
+
+export default function practicePage(){
+
+  const { data: session } = useSession();
+
+  const params = useParams();
+  const roomId = params.roomId as string;
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [answerInput, setAnswerInput] = useState('');
+  const socketRef = useRef<Socket | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [isBuzzCooldown, setIsBuzzCooldown] = useState(false);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+     socketRef.current = io('http://localhost:3001');
+
+     return () => {
+        socketRef.current?.disconnect();
+      };
+    }
+  }, [roomId]);
+
+
+  //handles sending the buzzes
+  const sendBuzz = () => {
+    if (answerInput.trim() && socketRef.current) {
+      socketRef.current.emit('buzz', {
+        roomId,
+        answer: answerInput,
+        username: session.user?.name
+      });
+      const newMessage: ChatMessage ={text: `you answered: ${answerInput}`, type: 'buzz'};
+      setMessages(prev => [...prev, newMessage]); 
+      
+      setAnswerInput('');
+      setIsBuzzCooldown(true);
+
+      //the buzz timer so we can only send buzzes every 3 seconds max
+      setTimeout(() => {
+        setIsBuzzCooldown(false);
+      }, 3000);
+    }
+  };
+  return (
+    <div className="max-w-full mx-auto p-4"> 
+      <h2 className="text-xl  mb-2">Room: {"practiceRoom"}</h2>
+      {/* put everything in a big div */}
+      <div className="flex"> 
+        <div className=" m-3">
+          <img src={mathPhoto.src} alt = "MATHs" />
+        </div>
+        
+        <div className="border rounded p-2 overflow-y-auto m-3 w-3/4 bg-gray-100">
+          {messages.map((msg, idx) => (
+            msg.type == 'buzz' ? 
+              <div key={idx} className="mb-1 text-green-500">{msg.text}</div>
+              :
+              <div key={idx} className="mb-1">{msg.text}</div>
+
+          ))}
+          <div ref={messagesEndRef} />
+          
+          
+          
+        </div>
+      </div>
+      <div>
+        <div className="flex gap-2 mt-2">
+          <input
+            className="flex-1 border rounded p-2"
+            value={answerInput}
+            onChange={e => setAnswerInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && sendBuzz()}
+            placeholder="Type an answer..."
+          />
+          <button
+            //the button should gray out when disabled
+            className={`px-4 py-2 rounded ${isBuzzCooldown
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 text-white'
+                }`}
+            onClick={sendBuzz}
+            disabled={isBuzzCooldown}
+          >
+            {isBuzzCooldown ? 'Wait...' : 'Buzz'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
