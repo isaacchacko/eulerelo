@@ -24,7 +24,7 @@ export default function Footer() {
           <div className="col-span-1 max-w-xs">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Eulerelo</h3>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Practice competitive programming problems and track your progress.
+              Compete head to head in math problems and track your progress.
             </p>
           </div>
 
