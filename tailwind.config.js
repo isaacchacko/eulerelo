@@ -11,9 +11,10 @@ module.exports = {
       colors: {
         background: 'var(--background)',
         foreground: 'var(--foreground)',
+        darkBlue: "#101827",
       },
       transitionProperty: {
-        'colors': 'background-color, border-color, color, fill, stroke',
+        'colors': 'background-color, border-color, color, fill, stroke' ,
       },
       transitionDuration: {
         '200': '200ms',

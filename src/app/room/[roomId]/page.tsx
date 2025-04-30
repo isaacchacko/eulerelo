@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
+import mathPhoto from '@/assets/mathProb.png';
 
 type MessageType = 'chat' | 'buzz';
 
@@ -84,15 +85,16 @@ export default function RoomPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-4"> 
-      <h2 className="text-xl mb-2">Room: {roomId}</h2>
+    <div className=" mx-auto p-4"> 
+      <h2 className="text-xl text-center mb-2">Room: {roomId}</h2>
       {/* put everything in a big div */}
       <div className="flex"> 
-        <div className="w-3/4">
-          MATH
+        <div className="m-3 w-full">
+          <img src={mathPhoto.src} alt = "MATHs" className = "w-full"/>
         </div>
-        <div>
-          <div className="border rounded p-2 h-64 overflow-y-auto mb-2 bg-gray-100">
+        
+        <div className = "flex flex-col w-full m-3">
+          <div className="border flex-grow rounded p-2 h-64 overflow-y-auto mb-2   bg-gray-100">
             {messages.map((msg, idx) => (
               msg.type == 'buzz' ? 
                 <div key={idx} className="mb-1 text-green-500">{msg.text}</div>
@@ -125,7 +127,7 @@ export default function RoomPage() {
             className="flex-1 border rounded p-2"
             value={answerInput}
             onChange={e => setAnswerInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendBuzz()}
+            onKeyDown={!isBuzzCooldown ? e => e.key === 'Enter' && sendBuzz() : () => {}}
             placeholder="Type an answer..."
           />
           <button
