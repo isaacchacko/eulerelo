@@ -30,18 +30,26 @@ function checkAnswer(
     const scope = {x,y};
     const parsedFormula = parse(answerFormula);
     const correct = parsedFormula.evaluate({x,y}) as number;
-
+    let fixedForLog = "";
+    //check for ln and log
+    if (userAnswer.includes("log")){
+      fixedForLog = userAnswer.replaceAll(")", ",10)")
+    } else{
+      fixedForLog = userAnswer
+    }
+    
+    const fixedAns = fixedForLog.replaceAll("ln", "log");
     //try to evaluate it as a number
-    let userAns = parseFloat(userAnswer);
+    let userAns = parseFloat(fixedAns);
     if (isNaN(userAns)) {
       //evalutate it as a formula
-      userAns = parse(userAnswer).evaluate(scope);
+      userAns = parse(fixedAns).evaluate(scope);
     }
     console.log(userAns);
 
     //means it is neither an accepted number or formula
     if (isNaN(userAns)) return false;
-    
+    console.log(userAns)
     //return whether the answer is within tolerance
     return Math.abs(userAns - correct) <= tolerance;
   } catch (error) {
