@@ -11,7 +11,7 @@ const upper = 5;
 const lower = 1;
 const answerFormula = "log(x)-log(y)";
 
-type MessageType = 'chat' | 'buzz';
+type MessageType = 'chat' | 'buzz' | 'buzzCorrect';
 
 
 interface ChatMessage {
@@ -27,10 +27,22 @@ function checkAnswer(
   tolerance: 0.001
 ): boolean {
   try{
+    const scope = {x,y};
     const parsedFormula = parse(answerFormula);
     const correct = parsedFormula.evaluate({x,y}) as number;
-    const userAns = parseFloat(userAnswer);
+
+    //try to evaluate it as a number
+    let userAns = parseFloat(userAnswer);
+    if (isNaN(userAns)) {
+      //evalutate it as a formula
+      userAns = parse(userAnswer).evaluate(scope);
+    }
+    console.log(userAns);
+
+    //means it is neither an accepted number or formula
     if (isNaN(userAns)) return false;
+    
+    //return whether the answer is within tolerance
     return Math.abs(userAns - correct) <= tolerance;
   } catch (error) {
     console.error ("validation error: ", error);
@@ -70,24 +82,37 @@ export default function practicePage(){
 
   //handles sending the buzzes
   const sendBuzz = () => {
-    if (answerInput.trim() && socketRef.current) {
-      socketRef.current.emit('buzz', {
-        roomId,
-        answer: answerInput,
-        username: session.user?.name
-      });
-      const newMessage: ChatMessage ={text: `you answered: ${answerInput}`, type: 'buzz'};
-      setMessages(prev => [...prev, newMessage]); 
+    
+    //validate answer
+    const validity = checkAnswer(answerInput, answerFormula, upper, lower, 0.001)
+    setCheck(validity);
+    
+    if (validity) {
       
-      //validate answer
-      const validity = checkAnswer(answerInput, answerFormula, upper, lower, 0.001)
-      setCheck(validity);
-     
-      if (validity) {
-        console.log ("YEEEEESSSSS")
-      } else {
-        console.log("NOOOOOO")
+      if (answerInput.trim() && socketRef.current) {
+        socketRef.current.emit('buzzCorrect', {
+          roomId,
+          answer: answerInput,
+          username: session.user?.name
+        });
+        const newMessage: ChatMessage ={text: `you answered: ${answerInput}`, type: 'buzzCorrect'};
+        setMessages(prev => [...prev, newMessage]); 
       }
+    } else {
+      
+      if (answerInput.trim() && socketRef.current) {
+        socketRef.current.emit('buzz', {
+          roomId,
+          answer: answerInput,
+          username: session.user?.name
+        });
+      }
+        const newMessage: ChatMessage ={text: `you answered: ${answerInput}`, type: 'buzz'};
+        setMessages(prev => [...prev, newMessage]); 
+    }
+
+    
+    
 
 
       setAnswerInput('');
@@ -96,7 +121,7 @@ export default function practicePage(){
       setTimeout(() => {
         setIsBuzzCooldown(false);
       }, 1000);
-    }
+    
   };
   return (
     <div className="max-w-full mx-auto p-4"> 
@@ -111,9 +136,12 @@ export default function practicePage(){
         <div className="border rounded p-2 overflow-y-auto m-2 w-1/2 bg-gray-100">
           {messages.map((msg, idx) => (
             msg.type == 'buzz' ? 
-              <div key={idx} className="mb-1 text-green-500">{msg.text}</div>
+              <div key={idx} className="mb-1 text-red-600"   >{msg.text}</div>
               :
-              <div key={idx} className="mb-1">{msg.text}</div>
+              msg.type == "buzzCorrect" ?
+                <div key={idx} className="mb-1 text-green-600"   >{msg.text}</div>
+                :
+                <div key={idx} className="mb-1">{msg.text}</div>
 
           ))}
           <div ref={messagesEndRef} />
