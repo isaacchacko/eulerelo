@@ -40,16 +40,13 @@ function checkAnswer(
     
     const fixedAns = fixedForLog.replaceAll("ln", "log");
     //try to evaluate it as a number
-    let userAns = parseFloat(fixedAns);
-    if (isNaN(userAns)) {
-      //evalutate it as a formula
-      userAns = parse(fixedAns).evaluate(scope);
-    }
-    console.log(userAns);
+    let userAns = parse(fixedAns).evaluate(scope);
+    console.log( `user answered: ${userAns}`); 
+    
 
     //means it is neither an accepted number or formula
     if (isNaN(userAns)) return false;
-    console.log(userAns)
+    
     //return whether the answer is within tolerance
     return Math.abs(userAns - correct) <= tolerance;
   } catch (error) {

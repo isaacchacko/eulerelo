@@ -5,12 +5,56 @@ import { useParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
 import mathPhoto from '@/assets/mathProb.png';
+import { evaluate, parse } from "mathjs";
 
-type MessageType = 'chat' | 'buzz';
+const upper = 5;
+const lower = 1;
+const answerFormula = "log(x)-log(y)";
+
+
+type MessageType = 'chat' | 'buzz' | 'buzzCorrect';
 
 interface ChatMessage {
   text: string;
   type: MessageType;
+}
+
+
+function checkAnswer(
+  userAnswer: string,
+  answerFormula: string, 
+  x: number,
+  y: number, 
+  tolerance: 0.001
+): boolean {
+  try{
+    const scope = {x,y};
+    const parsedFormula = parse(answerFormula);
+    const correct = parsedFormula.evaluate({x,y}) as number;
+    let fixedForLog = "";
+    //check for ln and log
+    if (userAnswer.includes("log")){
+      fixedForLog = userAnswer.replaceAll(")", ",10)")
+    } else{
+      fixedForLog = userAnswer
+    }
+    
+    const fixedAns = fixedForLog.replaceAll("ln", "log");
+    //try to evaluate it as a number
+    let userAns = parse(fixedAns).evaluate(scope);
+    console.log( `user answered: ${userAns}`); 
+    
+
+    //means it is neither an accepted number or formula
+    if (isNaN(userAns)) return false;
+    
+    //return whether the answer is within tolerance
+    console.log(Math.abs(userAns - correct) <= tolerance)
+    return Math.abs(userAns - correct) <= tolerance;
+  } catch (error) {
+    console.error ("validation error: ", error);
+    return false;
+  }
 }
 
 export default function RoomPage() {
@@ -23,6 +67,7 @@ export default function RoomPage() {
   const [chatInput, setChatInput] = useState('');
   const [answerInput, setAnswerInput] = useState('');
   const socketRef = useRef<Socket | null>(null);
+  const [check, setCheck] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [isBuzzCooldown, setIsBuzzCooldown] = useState(false);
 
@@ -48,6 +93,11 @@ export default function RoomPage() {
         setMessages(prev => [...prev, new_message]);
       });
 
+      socketRef.current.on('buzzCorrect', (buzz_message: string, username: string) => {
+        const new_message: ChatMessage = {text: `${username} answered: ${buzz_message}`, type: 'buzzCorrect'};
+        setMessages(prev => [...prev, new_message]);
+      });
+
       return () => {
         socketRef.current?.disconnect();
       };
@@ -68,20 +118,39 @@ export default function RoomPage() {
 
   //handles sending the buzzes
   const sendBuzz = () => {
-    if (answerInput.trim() && socketRef.current) {
-      socketRef.current.emit('buzz', {
-        roomId,
-        answer: answerInput,
-        username: session.user?.name
-      });
-      setAnswerInput('');
-      setIsBuzzCooldown(true);
+    //validate answer
+    const validity = checkAnswer(answerInput, answerFormula, upper, lower, 0.001)
+    setCheck(validity);
 
-      //the buzz timer so we can only send buzzes every 3 seconds max
-      setTimeout(() => {
-        setIsBuzzCooldown(false);
-      }, 3000);
+    if (validity) {
+      //if its correct we want the type to be buzzCorrect
+      if (answerInput.trim() && socketRef.current) {
+        socketRef.current.emit('buzzCorrect', {
+          roomId,
+          answer: answerInput,
+          username: session.user?.name
+        });
+        
+      }
+    } else {
+      // otherwise we want it to just be a buzz
+      if (answerInput.trim() && socketRef.current) {
+        socketRef.current.emit('buzz', {
+          roomId,
+          answer: answerInput,
+          username: session.user?.name
+        });
+      }
+         
     }
+
+    setAnswerInput('');
+    setIsBuzzCooldown(true);
+    //the buzz timer so we can only send buzzes every 3 seconds max
+    setTimeout(() => {
+      setIsBuzzCooldown(false);
+    }, 3000);
+    
   };
 
   return (
@@ -97,9 +166,12 @@ export default function RoomPage() {
           <div className="border flex-grow rounded p-2 h-64 overflow-y-auto mb-2   bg-gray-100">
             {messages.map((msg, idx) => (
               msg.type == 'buzz' ? 
-                <div key={idx} className="mb-1 text-green-500">{msg.text}</div>
+                <div key={idx} className="mb-1 text-red-500">{msg.text}</div>
                 :
-                <div key={idx} className="mb-1">{msg.text}</div>
+                msg.type == "buzzCorrect" ?
+                  <div key={idx} className="mb-1 text-green-600"   >{msg.text}</div>
+                  :
+                  <div key={idx} className="mb-1">{msg.text}</div>
 
             ))}
             <div ref={messagesEndRef} />
