@@ -2,8 +2,17 @@ import { Server } from "socket.io";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
-  if (!res.socket.server.io) {
-    const io = new Server(res.socket.server, {
+
+  // optional chaining because res.socket can be null
+
+  // type assertion as any because res.socket is derived from the
+  // net library which doesn't come base with the server member. the
+  // code only works because NextJS attaches the server property at runtime
+
+  const server = (res.socket as any)?.server;
+
+  if (!server.io) {
+    const io = new Server(server, {
       path: "/api/socket/io",
       addTrailingSlash: false,
       cors: { origin: "*" } // Tighten for production
@@ -55,7 +64,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
       });
     });
 
-    res.socket.server.io = io;
+    server.io = io;
   }
   res.end();
 };

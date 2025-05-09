@@ -98,7 +98,7 @@ export default function practicePage(){
         socketRef.current.emit('buzzCorrect', {
           roomId,
           answer: answerInput,
-          username: session.user?.name
+          username: session?.user?.name
         });
         const newMessage: ChatMessage ={text: `you answered: ${answerInput}`, type: 'buzzCorrect'};
         setMessages(prev => [...prev, newMessage]); 
@@ -109,7 +109,7 @@ export default function practicePage(){
         socketRef.current.emit('buzz', {
           roomId,
           answer: answerInput,
-          username: session.user?.name
+          username: session?.user?.name
         });
       }
         const newMessage: ChatMessage ={text: `you answered: ${answerInput}`, type: 'buzz'};

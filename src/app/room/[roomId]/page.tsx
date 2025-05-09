@@ -43,18 +43,23 @@ function checkAnswer(
     try {
       answer = parse(answer).evaluate(scope);
     } catch (error) { // to catch errors when evaluating non-math
-      console.log('Caught undefined symbol error:', error.message);
+      console.log('Caught undefined symbol error:', error);
       return false; // since answer was non-math
     }
 
     console.log(`user answered: ${answer}`);
+    
+    // convert to number to match the remaining usage of answer variable
+    const numeric_answer = Number(answer);
 
     // means it is neither an accepted number or formula
-    if (isNaN(answer)) return false;
+    // apparently js isNaN tries to typecast anything to number while
+    // tsx expects only numbers
+    if (isNaN(numeric_answer)) return false;
     
-    // return whether the answer is within tolerance
-    console.log(Math.abs(answer - correct) <= tolerance)
-    return Math.abs(answer - correct) <= tolerance;
+    // return whether the numeric_answer is within tolerance
+    console.log(Math.abs(numeric_answer - correct) <= tolerance)
+    return Math.abs(numeric_answer - correct) <= tolerance;
   } catch (error) {
     console.error ("validation error: ", error);
     return false;
@@ -113,7 +118,7 @@ export default function RoomPage() {
       socketRef.current.emit('chat', {
         roomId,
         text: chatInput,
-        username: session.user?.name,
+        username: session?.user?.name,
       });
     }
 
@@ -132,7 +137,7 @@ export default function RoomPage() {
         socketRef.current.emit('buzzCorrect', {
           roomId,
           answer: answerInput,
-          username: session.user?.name
+          username: session?.user?.name
         });
         
       }
@@ -142,7 +147,7 @@ export default function RoomPage() {
         socketRef.current.emit('buzz', {
           roomId,
           answer: answerInput,
-          username: session.user?.name
+          username: session?.user?.name
         });
       }
          
