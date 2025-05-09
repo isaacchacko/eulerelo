@@ -21,7 +21,7 @@ interface ChatMessage {
 
 
 function checkAnswer(
-  userAnswer: string,
+  answer: string,
   answerFormula: string, 
   x: number,
   y: number, 
@@ -31,26 +31,30 @@ function checkAnswer(
     const scope = {x,y};
     const parsedFormula = parse(answerFormula);
     const correct = parsedFormula.evaluate({x,y}) as number;
-    let fixedForLog = "";
-    //check for ln and log
-    if (userAnswer.includes("log")){
-      fixedForLog = userAnswer.replaceAll(")", ",10)")
-    } else{
-      fixedForLog = userAnswer
+
+    // check for ln and log
+    if (answer.includes("log")) {
+      // such a budget fix but its fine
+      answer = answer.replaceAll(")", ",10)");
     }
     
-    const fixedAns = fixedForLog.replaceAll("ln", "log");
-    //try to evaluate it as a number
-    let userAns = parse(fixedAns).evaluate(scope);
-    console.log( `user answered: ${userAns}`); 
-    
+    answer = answer.replaceAll("ln", "log");
 
-    //means it is neither an accepted number or formula
-    if (isNaN(userAns)) return false;
+    try {
+      answer = parse(answer).evaluate(scope);
+    } catch (error) { // to catch errors when evaluating non-math
+      console.log('Caught undefined symbol error:', error.message);
+      return false; // since answer was non-math
+    }
+
+    console.log(`user answered: ${answer}`);
+
+    // means it is neither an accepted number or formula
+    if (isNaN(answer)) return false;
     
-    //return whether the answer is within tolerance
-    console.log(Math.abs(userAns - correct) <= tolerance)
-    return Math.abs(userAns - correct) <= tolerance;
+    // return whether the answer is within tolerance
+    console.log(Math.abs(answer - correct) <= tolerance)
+    return Math.abs(answer - correct) <= tolerance;
   } catch (error) {
     console.error ("validation error: ", error);
     return false;
