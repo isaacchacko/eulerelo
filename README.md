@@ -1,5 +1,9 @@
 # Eulerelo
 
+![Eulerelo Landing Page](https://raw.githubusercontent.com/isaacchacko/eulerelo/main/public/hero.png "The homepage!")
+
+![Eulerelo Practice Room](https://raw.githubusercontent.com/isaacchacko/eulerelo/main/public/practice-room.png "Can't take the heat? Practice hard problems without stress in our practice rooms!")
+
 A competitive programming platform that helps users track their progress and compete with others.
 
 ## Features
@@ -13,7 +17,7 @@ A competitive programming platform that helps users track their progress and com
 
 ## Tech Stack
 
-- Next.js 15 with App Router
+- Next.js 14 with App Router
 - TypeScript
 - NextAuth.js for authentication
 - Prisma with PostgreSQL
@@ -22,27 +26,32 @@ A competitive programming platform that helps users track their progress and com
 ## Getting Started
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/yourusername/eulerelo.git
    cd eulerelo
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Set up environment variables:
+
    - Copy `.env.example` to `.env` and fill in your database URL
    - Copy `.env.example` to `.env.local` and fill in your NextAuth configuration
 
 4. Set up the database:
+
    ```bash
    npx prisma generate
    npx prisma db push
    ```
 
 5. Run the development server:
+
    ```bash
    npm run dev
    ```
@@ -52,9 +61,11 @@ A competitive programming platform that helps users track their progress and com
 ## Environment Variables
 
 ### `.env`
+
 - `DATABASE_URL`: PostgreSQL database connection URL
 
 ### `.env.local`
+
 - `NEXTAUTH_URL`: Base URL of your application
 - `NEXTAUTH_SECRET`: Secret key for NextAuth.js (generate with `openssl rand -base64 32`)
 
