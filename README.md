@@ -1,8 +1,6 @@
 # Eulerelo
 
-A competitive programming platform that helps users track their progress and compete with others.
-
-> Challenge your math skills in real-time duels, climb the leaderboard, and master topics from arithmetic to calculus. Compete with others, solve problems faster, and see how you rank among math enthusiasts worldwide!
+A competitve math website! Challenge your math skills in real-time duels, climb the leaderboard, and master topics from arithmetic to calculus. Compete with others, solve problems faster, and see how you rank among math enthusiasts worldwide!
 
 ## Screenshots
 
