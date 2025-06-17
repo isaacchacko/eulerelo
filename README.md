@@ -4,7 +4,11 @@ A competitve math website! Challenge your math skills in real-time duels, climb 
 
 ## Screenshots
 
+The Eulerelo Landing Page
+
 ![Eulerelo Landing Page](https://raw.githubusercontent.com/isaacchacko/eulerelo/main/public/hero.png "The homepage!")
+
+The Eulerelo Practice Room
 
 ![Eulerelo Practice Room](https://raw.githubusercontent.com/isaacchacko/eulerelo/main/public/practice-room.png "Can't take the heat?Practice hard problems without stress in our practice rooms!")
 
