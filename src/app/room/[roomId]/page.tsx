@@ -22,22 +22,22 @@ interface ChatMessage {
 
 function checkAnswer(
   answer: string,
-  answerFormula: string, 
+  answerFormula: string,
   x: number,
-  y: number, 
+  y: number,
   tolerance: 0.001
 ): boolean {
-  try{
-    const scope = {x,y};
+  try {
+    const scope = { x, y };
     const parsedFormula = parse(answerFormula);
-    const correct = parsedFormula.evaluate({x,y}) as number;
+    const correct = parsedFormula.evaluate({ x, y }) as number;
 
     // check for ln and log
     if (answer.includes("log")) {
       // such a budget fix but its fine
       answer = answer.replaceAll(")", ",10)");
     }
-    
+
     answer = answer.replaceAll("ln", "log");
 
     try {
@@ -48,7 +48,7 @@ function checkAnswer(
     }
 
     console.log(`user answered: ${answer}`);
-    
+
     // convert to number to match the remaining usage of answer variable
     const numeric_answer = Number(answer);
 
@@ -56,12 +56,12 @@ function checkAnswer(
     // apparently js isNaN tries to typecast anything to number while
     // tsx expects only numbers
     if (isNaN(numeric_answer)) return false;
-    
+
     // return whether the numeric_answer is within tolerance
     console.log(Math.abs(numeric_answer - correct) <= tolerance)
     return Math.abs(numeric_answer - correct) <= tolerance;
   } catch (error) {
-    console.error ("validation error: ", error);
+    console.error("validation error: ", error);
     return false;
   }
 }
@@ -88,22 +88,22 @@ export default function RoomPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      socketRef.current = io('http://localhost:3001');
+      socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
 
       socketRef.current.emit('joinRoom', roomId);
 
       socketRef.current.on('chat', (chat_message: string, username: string) => {
-        const new_message: ChatMessage = {text: `${username}: ${chat_message}`, type: 'chat'};
+        const new_message: ChatMessage = { text: `${username}: ${chat_message}`, type: 'chat' };
         setMessages(prev => [...prev, new_message]);
       });
 
       socketRef.current.on('buzz', (buzz_message: string, username: string) => {
-        const new_message: ChatMessage = {text: `${username} answered: ${buzz_message}`, type: 'buzz'};
+        const new_message: ChatMessage = { text: `${username} answered: ${buzz_message}`, type: 'buzz' };
         setMessages(prev => [...prev, new_message]);
       });
 
       socketRef.current.on('buzzCorrect', (buzz_message: string, username: string) => {
-        const new_message: ChatMessage = {text: `${username} answered: ${buzz_message}`, type: 'buzzCorrect'};
+        const new_message: ChatMessage = { text: `${username} answered: ${buzz_message}`, type: 'buzzCorrect' };
         setMessages(prev => [...prev, new_message]);
       });
 
@@ -139,7 +139,7 @@ export default function RoomPage() {
           answer: answerInput,
           username: session?.user?.name
         });
-        
+
       }
     } else {
       // otherwise we want it to just be a buzz
@@ -150,7 +150,7 @@ export default function RoomPage() {
           username: session?.user?.name
         });
       }
-         
+
     }
 
     setAnswerInput('');
@@ -159,22 +159,22 @@ export default function RoomPage() {
     setTimeout(() => {
       setIsBuzzCooldown(false);
     }, 3000);
-    
+
   };
 
   return (
-    <div className=" mx-auto p-4"> 
+    <div className=" mx-auto p-4">
       <h2 className="text-xl text-center mb-2">Room: {roomId}</h2>
       {/* put everything in a big div */}
-      <div className="flex"> 
+      <div className="flex">
         <div className="m-3 w-full">
-          <img src={mathPhoto.src} alt = "MATHs" className = "w-full"/>
+          <img src={mathPhoto.src} alt="MATHs" className="w-full" />
         </div>
-        
-        <div className = "flex flex-col w-full m-3">
+
+        <div className="flex flex-col w-full m-3">
           <div className="border flex-grow rounded p-2 h-64 overflow-y-auto mb-2   bg-gray-100">
             {messages.map((msg, idx) => (
-              msg.type == 'buzz' ? 
+              msg.type == 'buzz' ?
                 <div key={idx} className="mb-1 text-red-500">{msg.text}</div>
                 :
                 msg.type == "buzzCorrect" ?
@@ -208,15 +208,15 @@ export default function RoomPage() {
             className="flex-1 border rounded p-2"
             value={answerInput}
             onChange={e => setAnswerInput(e.target.value)}
-            onKeyDown={!isBuzzCooldown ? e => e.key === 'Enter' && sendBuzz() : () => {}}
+            onKeyDown={!isBuzzCooldown ? e => e.key === 'Enter' && sendBuzz() : () => { }}
             placeholder="Type an answer..."
           />
           <button
             //the button should gray out when disabled
             className={`px-4 py-2 rounded ${isBuzzCooldown
-? 'bg-gray-400 cursor-not-allowed'
-: 'bg-blue-500 text-white'
-}`}
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-blue-500 text-white'
+              }`}
             onClick={sendBuzz}
             disabled={isBuzzCooldown}
           >

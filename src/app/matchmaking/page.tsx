@@ -11,7 +11,7 @@ const MatchmakingPage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    socket = io('http://localhost:3001');
+    socket = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
     socket.emit('joinMatchmaking');
 
     socket.on('matched', (roomId: string) => {

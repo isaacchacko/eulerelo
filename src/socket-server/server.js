@@ -7,7 +7,8 @@ const express = require('express');
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-  cors: { origin: '*' }
+  cors: { origin: 'https://eulerelo.up.railway.app' },
+  methods: ["GET", "POST"]
 });
 
 let queue = [];
