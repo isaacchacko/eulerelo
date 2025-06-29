@@ -4,8 +4,13 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
-import mathPhoto from '@/assets/mathProb.png';
 import { evaluate, parse } from "mathjs";
+import Link from "next/link";
+
+// latex
+import { BlockMath } from 'react-katex';
+
+import CopyButton from '@/components/CopyButton';
 
 const upper = 5;
 const lower = 1;
@@ -79,18 +84,16 @@ export default function RoomPage() {
   const [check, setCheck] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [isBuzzCooldown, setIsBuzzCooldown] = useState(false);
-
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
+  const [opponent, setOpponent] = useState("Unknown");
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
 
-      socketRef.current.emit('joinRoom', roomId);
+      if (!session) return;
+      if (!session.user) return;
+
+      socketRef.current.emit('joinRoom', roomId, session.user.name);
 
       socketRef.current.on('chat', (chat_message: string, username: string) => {
         const new_message: ChatMessage = { text: `${username}: ${chat_message}`, type: 'chat' };
@@ -105,6 +108,15 @@ export default function RoomPage() {
       socketRef.current.on('buzzCorrect', (buzz_message: string, username: string) => {
         const new_message: ChatMessage = { text: `${username} answered: ${buzz_message}`, type: 'buzzCorrect' };
         setMessages(prev => [...prev, new_message]);
+      });
+
+      socketRef.current.on('recall', (data) => {
+        const opponents = data.opponents;
+        if (!socketRef.current) return;
+        if (!session) return;
+        if (!session.user) return;
+        const opp = opponents.find((player: { id: string; username: string; }) => player.username !== session.user?.name);
+        setOpponent(opp ? opp.username : "Unknow");
       });
 
       return () => {
@@ -164,15 +176,33 @@ export default function RoomPage() {
 
   return (
     <div className=" mx-auto p-4">
-      <h2 className="text-xl text-center mb-2">Room: {roomId}</h2>
+      <div className='flex flex-row justify-between mb-2 text-xl'>
+        <div className='flex flex-row gap-3 items-center'>
+          <div className="bg-black py-3 px-5 border-rounded rounded-lg flex flex-row gap-2 scale-90 hover:scale-100 transition-transform duration-300">
+            <img src="/globe.svg" alt="Dummy icon for user 1" width={24} />
+            <Link
+              href="/profile"
+              className='hover:text-blue-500 hover:underline'>
+              {session && session.user && (session.user.name)}</Link>
+          </div>
+          <h3 className="vs">vs</h3>
+          <div className="bg-black py-3 px-5 border-rounded rounded-lg flex flex-row gap-2 scale-90 hover:scale-100 transition-transform duration-300">
+            <img src="/globe.svg" alt="Dummy icon for user 2" width={24} />
+            <a href="" className='hover:text-blue-500 hover:underline'>{opponent}</a>
+          </div>
+
+        </div>
+        <CopyButton text={roomId} buttonText='Copy Room ID' />
+
+      </div>
       {/* put everything in a big div */}
       <div className="flex">
-        <div className="m-3 w-full">
-          <img src={mathPhoto.src} alt="MATHs" className="w-full" />
+        <div className="m-3 w-full flex flex-col justify-center text-4xl">
+          <BlockMath math={"E=mc^2"} />
         </div>
 
-        <div className="flex flex-col w-full m-3">
-          <div className="border flex-grow rounded p-2 h-64 overflow-y-auto mb-2   bg-gray-100">
+        <div className="flex flex-col w-full m-3 ">
+          <div className="border flex-grow rounded p-2 h-64 overflow-y-auto mb-2 dark:bg-slate-700">
             {messages.map((msg, idx) => (
               msg.type == 'buzz' ?
                 <div key={idx} className="mb-1 text-red-500">{msg.text}</div>
@@ -187,7 +217,7 @@ export default function RoomPage() {
           </div>
           <div className="flex gap-2">
             <input
-              className="flex-1 border rounded p-2"
+              className="flex-1 border rounded p-2 dark:bg-slate-700"
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && sendChat()}
@@ -205,7 +235,7 @@ export default function RoomPage() {
       <div>
         <div className="flex gap-2 mt-2">
           <input
-            className="flex-1 border rounded p-2"
+            className="flex-1 border rounded p-2 dark:bg-slate-700"
             value={answerInput}
             onChange={e => setAnswerInput(e.target.value)}
             onKeyDown={!isBuzzCooldown ? e => e.key === 'Enter' && sendBuzz() : () => { }}

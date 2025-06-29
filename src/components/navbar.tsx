@@ -21,7 +21,7 @@ import { ThemeToggle } from "./ThemeToggle";
 export default function Navbar() {
   // Get the current session state from NextAuth
   const { data: session } = useSession();
-  
+
   // State for mobile menu visibility
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // State for user profile dropdown

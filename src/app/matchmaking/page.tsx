@@ -4,15 +4,21 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
+import { useSession } from 'next-auth/react';
 
 let socket: Socket;
 
 const MatchmakingPage = () => {
   const router = useRouter();
+  const { data: session } = useSession();
 
   useEffect(() => {
+
+    if (!session) return;
+    if (!session.user) return;
+
     socket = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
-    socket.emit('joinMatchmaking');
+    socket.emit('joinMatchmaking', session.user.name);
 
     socket.on('matched', (roomId: string) => {
       router.push(`/room/${roomId}`);

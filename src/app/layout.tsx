@@ -16,6 +16,9 @@ import { Providers } from "@/components/providers";
 // Initialize the Inter font from Google Fonts
 const inter = Inter({ subsets: ["latin"] });
 
+// add the katex css document
+import 'katex/dist/katex.min.css';
+
 /**
  * Metadata configuration for the application
  * Defines SEO-related information and document properties
