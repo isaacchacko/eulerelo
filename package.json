@@ -6,6 +6,7 @@
     "dev": "concurrently \"next dev\" \"nodemon ./src/socket-server/server.js\"",
     "build": "prisma generate --no-engine && next build",
     "start": "next start",
+    "start:socket": "node ./src/socket-server/server.js",
     "lint": "next lint",
     "postinstall": "prisma generate --no-engine"
   },
