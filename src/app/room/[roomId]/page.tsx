@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
 import { evaluate, parse } from "mathjs";
 import Link from "next/link";
 
@@ -11,15 +12,18 @@ import Link from "next/link";
 import { BlockMath } from 'react-katex';
 
 import CopyButton from '@/components/CopyButton';
+import path from 'path';
 
 const upper = 5;
 const lower = 1;
 const answerFormula = "log(x)-log(y)";
 
 
-type MessageType = 'chat' | 'buzz' | 'buzzCorrect';
+type MessageType = 'chat' | 'buzz' | 'buzzCorrect' | 'system';
 
 interface ChatMessage {
+  role: string;
+  username: string;
   text: string;
   type: MessageType;
 }
@@ -71,12 +75,18 @@ function checkAnswer(
   }
 }
 
+const words = ["velvet", "mango", "sunrise", "crimson", "forest", "echo", "silver", "breeze", "shadow", "amber", "river", "whisper", "cosmic", "pearl", "ember", "lunar", "sage", "harbor"];
+
+const getRandomThreeWordString = () =>
+  Array.from({ length: 3 }, () => words[Math.floor(Math.random() * words.length)]).join('-');
+
 export default function RoomPage() {
 
   const { data: session } = useSession();
-
   const params = useParams();
   const roomId = params.roomId as string;
+  const displayName = (session && session.user) ? session.user.name as string : getRandomThreeWordString();
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [answerInput, setAnswerInput] = useState('');
@@ -84,53 +94,53 @@ export default function RoomPage() {
   const [check, setCheck] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [isBuzzCooldown, setIsBuzzCooldown] = useState(false);
-  const [opponent, setOpponent] = useState("Unknown");
+  const [redPlayer, setRedPlayer] = useState("Unknown");
+  const [bluePlayer, setBluePlayer] = useState("Unknown");
+  const [role, setRole] = useState("Unknown");
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
 
-      if (!session) return;
-      if (!session.user) return;
+      socketRef.current.emit("joinRoom", roomId, displayName);
 
-      socketRef.current.emit('joinRoom', roomId, session.user.name);
-
-      socketRef.current.on('chat', (chat_message: string, username: string) => {
-        const new_message: ChatMessage = { text: `${username}: ${chat_message}`, type: 'chat' };
-        setMessages(prev => [...prev, new_message]);
-      });
-
-      socketRef.current.on('buzz', (buzz_message: string, username: string) => {
-        const new_message: ChatMessage = { text: `${username} answered: ${buzz_message}`, type: 'buzz' };
-        setMessages(prev => [...prev, new_message]);
-      });
-
-      socketRef.current.on('buzzCorrect', (buzz_message: string, username: string) => {
-        const new_message: ChatMessage = { text: `${username} answered: ${buzz_message}`, type: 'buzzCorrect' };
-        setMessages(prev => [...prev, new_message]);
+      socketRef.current.on('message', (type: string, text: string, username: string, role: string) => {
+        setMessages(prev => [...prev, { type: type, text: text, username: username, role: role } as ChatMessage]);
       });
 
       socketRef.current.on('recall', (data) => {
         const opponents = data.opponents;
-        if (!socketRef.current) return;
-        if (!session) return;
-        if (!session.user) return;
-        const opp = opponents.find((player: { id: string; username: string; }) => player.username !== session.user?.name);
-        setOpponent(opp ? opp.username : "Unknow");
+        setRole(data.role);
+
+        if (data.role === "Competitor") {
+
+          console.log("recall detected, i am a competitor");
+          const opp = opponents.find((player: { id: string; username: string; }) => player.username !== displayName);
+          if (opp) setRedPlayer(opp.username);
+          setBluePlayer(displayName);
+        } else {
+          console.log("recall detected, i am a spectator");
+          setBluePlayer(opponents[0].username);
+          setRedPlayer(opponents[1].username);
+        }
       });
 
       return () => {
+        socketRef.current?.emit('leaveRoom', roomId, displayName);
         socketRef.current?.disconnect();
       };
     }
-  }, [roomId]);
+
+  }, []);
 
   const sendChat = () => {
     if (chatInput.trim() && socketRef.current) {
-      socketRef.current.emit('chat', {
-        roomId,
+      socketRef.current.emit('message', {
+        roomId: roomId,
+        type: 'chat',
         text: chatInput,
-        username: session?.user?.name,
+        username: displayName,
+        role: role
       });
     }
 
@@ -146,20 +156,24 @@ export default function RoomPage() {
     if (validity) {
       //if its correct we want the type to be buzzCorrect
       if (answerInput.trim() && socketRef.current) {
-        socketRef.current.emit('buzzCorrect', {
-          roomId,
-          answer: answerInput,
-          username: session?.user?.name
+        socketRef.current.emit('message', {
+          roomId: roomId,
+          type: 'buzzCorrect',
+          text: answerInput,
+          username: displayName,
+          role: role
         });
 
       }
     } else {
       // otherwise we want it to just be a buzz
       if (answerInput.trim() && socketRef.current) {
-        socketRef.current.emit('buzz', {
-          roomId,
-          answer: answerInput,
-          username: session?.user?.name
+        socketRef.current.emit('message', {
+          roomId: roomId,
+          type: 'buzz',
+          text: answerInput,
+          username: displayName,
+          role: role
         });
       }
 
@@ -181,14 +195,19 @@ export default function RoomPage() {
           <div className="bg-black py-3 px-5 border-rounded rounded-lg flex flex-row gap-2 scale-90 hover:scale-100 transition-transform duration-300">
             <img src="/globe.svg" alt="Dummy icon for user 1" width={24} />
             <Link
-              href="/profile"
+              href=""
               className='hover:text-blue-500 hover:underline'>
-              {session && session.user && (session.user.name)}</Link>
+              {bluePlayer}
+            </Link>
           </div>
           <h3 className="vs">vs</h3>
           <div className="bg-black py-3 px-5 border-rounded rounded-lg flex flex-row gap-2 scale-90 hover:scale-100 transition-transform duration-300">
             <img src="/globe.svg" alt="Dummy icon for user 2" width={24} />
-            <a href="" className='hover:text-blue-500 hover:underline'>{opponent}</a>
+            <Link
+              href=""
+              className='hover:text-blue-500 hover:underline'>
+              {redPlayer}
+            </Link>
           </div>
 
         </div>
@@ -204,13 +223,17 @@ export default function RoomPage() {
         <div className="flex flex-col w-full m-3 ">
           <div className="border flex-grow rounded p-2 h-64 overflow-y-auto mb-2 dark:bg-slate-700">
             {messages.map((msg, idx) => (
-              msg.type == 'buzz' ?
-                <div key={idx} className="mb-1 text-red-500">{msg.text}</div>
+              msg.type === 'buzz' ?
+                <div key={idx} className="mb-1 text-red-500">({msg.role}) {msg.username} : {msg.text}</div>
                 :
-                msg.type == "buzzCorrect" ?
-                  <div key={idx} className="mb-1 text-green-600"   >{msg.text}</div>
+                msg.type === "buzzCorrect" ?
+                  <div key={idx} className="mb-1 text-green-600">({msg.role}) {msg.username} : {msg.text}</div>
                   :
-                  <div key={idx} className="mb-1">{msg.text}</div>
+                  msg.type === "system" ?
+                    <div key={idx} className="mb-1 italic text-gray-500">{msg.text}</div>
+                    :
+                    <div key={idx} className="mb-1">({msg.role}) {msg.username} : {msg.text}</div>
+
 
             ))}
             <div ref={messagesEndRef} />
