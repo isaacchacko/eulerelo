@@ -39,7 +39,7 @@ io.on('connection', (socket) => {
   socket.on('joinRoom', (roomId, username) => {
     socket.join(roomId);
     console.log(`User ${socket.id} (${username}) joined room ${roomId}`);
-    if (assignments[roomId].some(player => player.username === username)) {
+    if (assignments[roomId] && assignments[roomId].some(player => player.username === username)) {
 
       io.to(socket.id).emit('recall', { 'opponents': assignments[roomId], 'role': "Competitor" });
       io.to(roomId).emit('message', 'system', `Competitor "${username}" has joined the room.`, "");
