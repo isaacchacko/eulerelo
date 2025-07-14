@@ -15,7 +15,7 @@ visual
 accessibility/profile
 
 - [ ] make profile page public
-- [ ] add a duel button in the navbar
+- [x] add a duel button in the navbar
 - [ ] add profile pictures
 
 practice room
