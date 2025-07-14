@@ -101,6 +101,12 @@ export default function Navbar() {
                 Practice
               </Link>
               <Link
+                href="/duel"
+                className="text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+              >
+               Duel 
+              </Link>
+              <Link
                 href="/leaderboard"
                 className="text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium"
               >
