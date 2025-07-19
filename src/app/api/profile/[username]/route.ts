@@ -1,30 +1,29 @@
 import { getServerSession } from "next-auth/next";
-import { authConfig } from "../auth/auth.config";
+import { authConfig } from "../../auth/auth.config";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
-  const session = await getServerSession({
-    ...authConfig,
-    providers: [...authConfig.providers]
-  });
+export async function GET(request: Request, { params }: { params: { username: string } }) {
+  let username = params.username;
 
-  if (!session?.user) {
+  if (!username) {
+    console.error("Error fetching user profile: no username provided");
     return new NextResponse(
-      JSON.stringify({ error: "You must be logged in to access this route" }),
-      { status: 401 }
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500 }
     );
   }
 
   try {
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { name: username },
       select: {
         id: true,
         name: true,
-        email: true,
         createdAt: true,
         updatedAt: true,
+        elo: true,
+        problemsSolved: true
       },
     });
 

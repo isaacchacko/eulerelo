@@ -11,13 +11,51 @@ import Link from "next/link";
 // latex
 import { BlockMath } from 'react-katex';
 
-import CopyButton from '@/components/CopyButton';
+import CopyLinkButton from '@/components/CopyLinkButton';
 import path from 'path';
+
+const BUZZ_COOLDOWN = 3000;
 
 const upper = 5;
 const lower = 1;
 const answerFormula = "log(x)-log(y)";
 
+const SYMBOLS = {
+  won: { symbol: '✓', className: 'text-green-500' },
+  lost: { symbol: '✗', className: 'text-red-500' },
+  undecided: { symbol: '–', className: 'text-gray-400' },
+};
+
+const RoundResults = ({ results }) => (
+  <div className="flex gap-2 justify-center">
+    {results.slice(0, 5).map((result, idx) => {
+      const { symbol, className } = SYMBOLS[result] || SYMBOLS.undecided;
+      return (
+        <span
+          key={idx}
+          className={`text-2xl font-bold ${className}`}
+          aria-label={result}
+        >
+          {symbol}
+        </span>
+      );
+    })}
+  </div>
+);
+// const results = ['won', 'lost', 'undecided', 'won', 'lost'];
+// <RoundResults results={results} />
+
+interface User {
+  id: string;
+  name: string;
+  active: boolean;
+}
+
+const defaultUser: User = {
+  id: "",
+  name: "Unknown",
+  active: false
+};
 
 type MessageType = 'chat' | 'buzz' | 'buzzCorrect' | 'system';
 
@@ -82,7 +120,7 @@ const getRandomThreeWordString = () =>
 
 export default function RoomPage() {
 
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const params = useParams();
   const roomId = params.roomId as string;
   const displayName = (session && session.user) ? session.user.name as string : getRandomThreeWordString();
@@ -94,44 +132,70 @@ export default function RoomPage() {
   const [check, setCheck] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [isBuzzCooldown, setIsBuzzCooldown] = useState(false);
-  const [redPlayer, setRedPlayer] = useState("Unknown");
-  const [bluePlayer, setBluePlayer] = useState("Unknown");
+  const [redPlayer, setRedPlayer] = useState<User>(defaultUser);
+  const [bluePlayer, setBluePlayer] = useState<User>(defaultUser);
   const [role, setRole] = useState("Unknown");
+  const [buzzInputText, setBuzzInputText] = useState('Enter your answer...');
+  const [roundNumber, setRoundNumber] = useState<Number | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
+    if (status === "loading" || typeof window === "undefined") return;
 
-      socketRef.current.emit("joinRoom", roomId, displayName);
+    const displayName = session?.user?.name || getRandomThreeWordString();
 
-      socketRef.current.on('message', (type: string, text: string, username: string, role: string) => {
-        setMessages(prev => [...prev, { type: type, text: text, username: username, role: role } as ChatMessage]);
-      });
+    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
+    socketRef.current.emit("joinRoom", roomId, displayName);
 
-      socketRef.current.on('recall', (data) => {
-        const opponents = data.opponents;
-        setRole(data.role);
+    socketRef.current.on('message', (type: string, text: string, username: string, role: string) => {
+      setMessages(prev => [...prev, { type: type, text: text, username: username, role: role } as ChatMessage]);
+    });
 
-        if (data.role === "Competitor") {
+    socketRef.current.on('updateRoomInfo', (data) => {
+      if (!socketRef.current) return;
+      const opponents = data.opponents;
+      const role = data.role;
+      const roundNumber = data.roundNumber;
 
-          console.log("recall detected, i am a competitor");
-          const opp = opponents.find((player: { id: string; username: string; }) => player.username !== displayName);
-          if (opp) setRedPlayer(opp.username);
-          setBluePlayer(displayName);
-        } else {
-          console.log("recall detected, i am a spectator");
-          setBluePlayer(opponents[0].username);
-          setRedPlayer(opponents[1].username);
-        }
-      });
+      if (role) {
+        setRole(role);
+        console.log("updateRoomInfo detected, i am now a " + role);
+      }
 
-      return () => {
-        socketRef.current?.emit('leaveRoom', roomId, displayName);
-        socketRef.current?.disconnect();
-      };
+      if (opponents) {
+        setBluePlayer(opponents[0]);
+        setRedPlayer(opponents[1]);
+      }
+
+      if (roundNumber) {
+        setRoundNumber(roundNumber)
+      }
+    });
+
+    const disconnect = () => {
+      if (!socketRef.current || !socketRef.current.connected) return;
+      socketRef.current.emit('leaveRoom', roomId);
+      socketRef.current.disconnect();
     }
 
-  }, []);
+    window.addEventListener('beforeunload', disconnect);
+
+    return () => {
+      window.removeEventListener('beforeunload', disconnect);
+      socketRef.current?.emit('leaveRoom', roomId, displayName);
+      socketRef.current?.disconnect();
+    };
+  }, [status, session]);
+
+  useEffect(() => {
+    if (messages.length < 3) return;  // fixes bug where screen scrolls at page load lmfaooo
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    if (buzzInputText !== "Enter your answer..." && !isBuzzCooldown) {
+      setBuzzInputText("Enter your answer...")
+    }
+  }, [isBuzzCooldown, buzzInputText]);
 
   const sendChat = () => {
     if (chatInput.trim() && socketRef.current) {
@@ -167,6 +231,7 @@ export default function RoomPage() {
       }
     } else {
       // otherwise we want it to just be a buzz
+      setBuzzInputText("Incorrect. Try again!");
       if (answerInput.trim() && socketRef.current) {
         socketRef.current.emit('message', {
           roomId: roomId,
@@ -184,97 +249,117 @@ export default function RoomPage() {
     //the buzz timer so we can only send buzzes every 3 seconds max
     setTimeout(() => {
       setIsBuzzCooldown(false);
-    }, 3000);
+    }, BUZZ_COOLDOWN);
 
   };
 
   return (
-    <div className=" mx-auto p-4">
-      <div className='flex flex-row justify-between mb-2 text-xl'>
-        <div className='flex flex-row gap-3 items-center'>
-          <div className="bg-black py-3 px-5 border-rounded rounded-lg flex flex-row gap-2 scale-90 hover:scale-100 transition-transform duration-300">
-            <img src="/globe.svg" alt="Dummy icon for user 1" width={24} />
-            <Link
-              href=""
-              className='hover:text-blue-500 hover:underline'>
-              {bluePlayer}
-            </Link>
-          </div>
-          <h3 className="vs">vs</h3>
-          <div className="bg-black py-3 px-5 border-rounded rounded-lg flex flex-row gap-2 scale-90 hover:scale-100 transition-transform duration-300">
-            <img src="/globe.svg" alt="Dummy icon for user 2" width={24} />
-            <Link
-              href=""
-              className='hover:text-blue-500 hover:underline'>
-              {redPlayer}
-            </Link>
+    <div className='flex justify-center'>
+      <div className=" mx-auto sm:p-4 w-[80%]">
+        <div className='flex flex-row justify-center mb-2 text-xl'>
+          <div className='py-3'>
+            <div className='flex flex-col gap-3 justify-center'>
+              <span className='text-2xl font-black text-center block sm:hidden'>Round 1/5</span>
+              <div className='grid grid-cols-4 gap-3'>
+
+                <div className="col-span-3 overflow-hidden bg-gray-300 dark:bg-black py-3 px-3 border-rounded rounded-lg flex flex-row gap-2 sm:scale-90 sm:hover:scale-100 transition-transform duration-300 items-center">
+                  <img className="w-5" src="/globe.svg" alt="Dummy icon for user 2" />
+                  <Link
+                    href={"/profile/" + bluePlayer.name}
+                    className='hover:text-blue-500 hover:underline'
+                    title={bluePlayer.name}
+                  >
+                    {bluePlayer.name}
+                  </Link>
+                  <div className={`w-3 h-3 rounded-full  ${bluePlayer.active ? "bg-green-500 animate-pulse" : "bg-gray-500"}`} title={`"${bluePlayer.name}" is ${bluePlayer.active ? 'online' : 'offline'}`} />
+                </div>
+                <span className='self-center text-2xl font-black text-center block sm:hidden'>0</span>
+
+                <div className="col-span-3 overflow-hidden bg-gray-300 dark:bg-black py-3 px-3 border-rounded rounded-lg flex flex-row gap-2 sm:scale-90 sm:hover:scale-100 transition-transform duration-300 items-center">
+                  <img className="w-5" src="/globe.svg" alt="Dummy icon for user 1" />
+                  <Link
+                    href={"/profile/" + redPlayer.name}
+                    className='hover:text-blue-500 hover:underline'
+                    title={redPlayer.name}
+                  >
+                    {redPlayer.name}
+                  </Link>
+                  <div className={`w-3 h-3 rounded-full  ${redPlayer.active ? "bg-green-500 animate-pulse" : "bg-gray-500"}`} title={`"${redPlayer.name}" is ${redPlayer.active ? 'online' : 'offline'}`} />
+                </div>
+                <span className='self-center text-2xl font-black text-center block sm:hidden'>0</span>
+              </div>
+            </div>
+            <h3 className="hidden sm:block text-center">vs</h3>
+
           </div>
 
         </div>
-        <CopyButton text={roomId} buttonText='Copy Room ID' />
-
-      </div>
-      {/* put everything in a big div */}
-      <div className="flex">
-        <div className="m-3 w-full flex flex-col justify-center text-4xl">
-          <BlockMath math={"E=mc^2"} />
-        </div>
-
-        <div className="flex flex-col w-full m-3 ">
-          <div className="border flex-grow rounded p-2 h-64 overflow-y-auto mb-2 dark:bg-slate-700">
-            {messages.map((msg, idx) => (
-              msg.type === 'buzz' ?
-                <div key={idx} className="mb-1 text-red-500">({msg.role}) {msg.username} : {msg.text}</div>
-                :
-                msg.type === "buzzCorrect" ?
-                  <div key={idx} className="mb-1 text-green-600">({msg.role}) {msg.username} : {msg.text}</div>
-                  :
-                  msg.type === "system" ?
-                    <div key={idx} className="mb-1 italic text-gray-500">{msg.text}</div>
-                    :
-                    <div key={idx} className="mb-1">({msg.role}) {msg.username} : {msg.text}</div>
-
-
-            ))}
-            <div ref={messagesEndRef} />
+        {/* put everything in a big div */}
+        <div className="flex flex-col sm:flex-row">
+          <div className="w-full flex flex-col justify-center text-4xl">
+            <BlockMath math={"E=mc^2"} />
           </div>
-          <div className="flex gap-2">
+
+
+          <div className="flex gap-2 my-2">
             <input
-              className="flex-1 border rounded p-2 dark:bg-slate-700"
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendChat()}
-              placeholder="Type a message..."
+              className="flex-1 border rounded p-2 dark:bg-slate-700 min-w-0"
+              value={answerInput}
+              onChange={e => setAnswerInput(e.target.value)}
+              onKeyDown={!isBuzzCooldown ? e => e.key === 'Enter' && sendBuzz() : () => { }}
+              placeholder={buzzInputText}
             />
             <button
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-              onClick={sendChat}
+              //the button should gray out when disabled
+              className={`px-4 py-2 rounded ${isBuzzCooldown
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 text-white'
+                }`}
+              onClick={sendBuzz}
+              disabled={isBuzzCooldown}
             >
-              Send
+              {isBuzzCooldown ? "Wait..." : 'Buzz'}
             </button>
           </div>
+
+          <div className='w-full bg-black dark:bg-white h-1 my-10 block sm:hidden' />
+          <div className="flex flex-col w-full" >
+            <div className="border flex-grow rounded p-2 h-32 sm:h-64 overflow-y-auto mb-2 dark:bg-slate-700">
+              {messages.map((msg, idx) => (
+                msg.type === 'buzz' ?
+                  <div key={idx} className="mb-1 text-red-500">({msg.role}) {msg.username} : {msg.text}</div>
+                  :
+                  msg.type === "buzzCorrect" ?
+                    <div key={idx} className="mb-1 text-green-600">({msg.role}) {msg.username} : {msg.text}</div>
+                    :
+                    msg.type === "system" ?
+                      <div key={idx} className="mb-1 italic text-gray-500">{msg.text}</div>
+                      :
+                      <div key={idx} className="mb-1">({msg.role}) {msg.username} : {msg.text}</div>
+
+
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="flex gap-2 mb-10">
+              <input
+                className="flex-1 border rounded p-2 dark:bg-slate-700 min-w-0"
+                value={chatInput}
+                onChange={e => setChatInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendChat()}
+                placeholder="Send a chat..."
+              />
+              <button
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+                onClick={sendChat}
+              >
+                Send
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-      <div>
-        <div className="flex gap-2 mt-2">
-          <input
-            className="flex-1 border rounded p-2 dark:bg-slate-700"
-            value={answerInput}
-            onChange={e => setAnswerInput(e.target.value)}
-            onKeyDown={!isBuzzCooldown ? e => e.key === 'Enter' && sendBuzz() : () => { }}
-            placeholder="Type an answer..."
-          />
-          <button
-            //the button should gray out when disabled
-            className={`px-4 py-2 rounded ${isBuzzCooldown
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-500 text-white'
-              }`}
-            onClick={sendBuzz}
-            disabled={isBuzzCooldown}
-          >
-            {isBuzzCooldown ? 'Wait...' : 'Buzz'}
-          </button>
+        <div>
         </div>
       </div>
     </div>

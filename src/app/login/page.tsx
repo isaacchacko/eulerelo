@@ -76,7 +76,7 @@ export default function LoginPage() {
       }
 
       // Redirect to dashboard on successful login
-      router.push("/profile");
+      router.push("/profile/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign in");
     } finally {

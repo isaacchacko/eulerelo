@@ -25,7 +25,7 @@ practice room
 duel
 
 - opponent display
-  - [ ] make the opponent's profile link work
+  - [x] make the opponent's profile link work
   - [ ] show the opponents elo
 - player logistics
   - [x] specify if the person sending a message is a competitor or spectator
@@ -36,3 +36,8 @@ duel
   - [ ] add a win screen
   - [ ] update elo
   - [ ] add a forfeit button
+
+bugs
+
+- room/[roomId]
+  - [ ] when a new text comes in it scrolls the whole screen instead of just scrolling the chat box

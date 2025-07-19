@@ -1,33 +1,33 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
 
-let socket: Socket;
-
 const MatchmakingPage = () => {
   const router = useRouter();
   const { data: session } = useSession();
+  const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
 
     if (!session) return;
     if (!session.user) return;
 
-    socket = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
-    socket.emit('joinMatchmaking', session.user.name);
+    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
+    socketRef.current.emit('joinMatchmaking', session.user.name);
 
-    socket.on('matched', (roomId: string) => {
+    socketRef.current.on('matched', (roomId: string) => {
       router.push(`/room/${roomId}`);
     });
 
     return () => {
-      socket.disconnect();
+      if (!socketRef.current) return;
+      socketRef.current.disconnect();
     };
-  }, [router]);
+  }, [session, router]); // im not too confident about router dependency
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">

@@ -107,7 +107,7 @@ export default function SignupPage() {
       }
 
       // Redirect to profile page after successful signup and signin
-      router.push("/profile");
+      router.push("/profile/" + formData.name);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
