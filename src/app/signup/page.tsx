@@ -1,9 +1,3 @@
-/**
- * Signup Page Component
- * Handles user registration with email and password.
- * Includes form validation and automatic sign-in after successful registration.
- */
-
 "use client";
 
 import { useState } from "react";
@@ -11,9 +5,6 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 
-/**
- * Form data interface for the signup form
- */
 interface SignupFormData {
   name: string;
   email: string;
@@ -21,14 +12,7 @@ interface SignupFormData {
   confirmPassword: string;
 }
 
-/**
- * Signup Page Component
- * Provides a form for user registration with validation and error handling
- * 
- * @returns The signup page with registration form
- */
 export default function SignupPage() {
-  // State for form data and error handling
   const [formData, setFormData] = useState<SignupFormData>({
     name: "",
     email: "",
@@ -55,18 +39,29 @@ export default function SignupPage() {
     }));
   };
 
-  /**
-   * Handle form submission
-   * Validates form data and creates a new user account
-   * 
-   * @param e - Submit event from the form
-   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    // Validate passwords match
+    if (!/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(formData.name)) {
+      setError("Usernames can only contain letters, numbers, and dashes.");
+      setLoading(false);
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setError("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length > 64 || formData.confirmPassword > 64 || formData.password.length < 8 || formData.confirmPassword < 8) {
+      setError("Passwords must be between 8 and 64 characters.");
+      setLoading(false);
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
@@ -148,7 +143,7 @@ export default function SignupPage() {
                 type="text"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Full Name"
+                placeholder="Username"
                 value={formData.name}
                 onChange={handleChange}
               />
@@ -162,7 +157,7 @@ export default function SignupPage() {
               <input
                 id="email"
                 name="email"
-                type="email"
+                type="text"
                 autoComplete="email"
                 required
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"

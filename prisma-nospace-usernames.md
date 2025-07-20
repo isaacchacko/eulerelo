@@ -7,7 +7,7 @@
 
 - [x] make todo doc (this)
 - [x] create `seed.ts` file so that other developers can also spin up a local server. change the `.env` file and send it over so that the database points locally
-- [ ] make better username checking, making sure that no spaces/special characters are allowed. (whatever restrictions we apply they have to be all focused on making the profile url work)
+- [x] make better username checking, making sure that no spaces/special characters are allowed. (whatever restrictions we apply they have to be all focused on making the profile url work)
 
 # notes
 
