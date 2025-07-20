@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(request: Request, { params }: { params: { username: string } }) {
-  let username = params.username;
+  let username = await params.username;
 
   if (!username) {
     console.error("Error fetching user profile: no username provided");
