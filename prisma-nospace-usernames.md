@@ -1,7 +1,7 @@
 # goal
 
-- [ ] refocus prisma development database from prod to something spun up locally
-- [ ] make usernames have no spaces or special characters so its easy to have a profile/<name> url
+- [x] refocus prisma development database from prod to something spun up locally
+- [x] make usernames have no spaces or special characters so its easy to have a profile/<name> url
 
 # envisioned commits
 
