@@ -11,7 +11,7 @@ const io = new Server(httpServer, {
     origin: [
       "http://localhost:3000",
       "https://eulerelo.up.railway.app",
-      "https://www.eulerelo.com",
+      "https://www.eulerelo.com"
     ],
     methods: ["GET", "POST"]
   }

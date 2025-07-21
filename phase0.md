@@ -1,5 +1,3 @@
-**to allen/anyone who reads this, im not done working on this `phase0.md` document. please complete the list of commits that we aspire to hit when completing phase 0, and order then based on pre-reqs.**
-
 # goals
 
 ## general
@@ -44,16 +42,14 @@
     - [ ] new problem table on db to store base prob/soln
     - [ ] new table to store past game info
       - nothing major, just the competitor names, who won, number of problems solved per player, elo gained, elo lost
-    - [ ] elo update function
+    - [ ] elo calculate/update function
     - [ ] forfeit function
     - [ ] time tracking by socket server: how long questions are solved
+    - [ ] advance round number, update round wins/losses
 
-# envisioned commits (unordered)
+# envisioned commits/branches
 
-- [ ] write this branch doc
-- [ ] make new tables (game info, problems) and make basic single problem entry (complex problems can be added by willy)
-- [ ] make elo update function
-- [ ] make forfeit function
-- [ ] add time tracking by socket server
-- [ ] complete mobile/desktop layout and create all fake buttons.
-- [ ] make all notification screen layouts (for now just test on some random endpoint)
+- [x] "write this branch doc" commit
+- [ ] backend branch **(in progress: isaac)**
+- [ ] frontend branch
+- [ ] notification screens branch

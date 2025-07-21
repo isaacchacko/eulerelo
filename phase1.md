@@ -21,7 +21,7 @@
 ## visual
 
 - [ ] add a dictionary definition for eulerelo in the hero (pronunciation, definition, in a sentence, etc.) so that people can finally pronounce eulerelo properly lol
-- [ ] have elements have entry css transitions rather than just appearing
+- [ ] have elements have entry css transitions rather than just appearing. use `motion` library like allen is doing
 
 # envisioned commits (unordered)
 
