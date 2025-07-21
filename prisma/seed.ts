@@ -7,16 +7,16 @@ async function main() {
   // Create test users
   const testUsers = [
     {
-      name: 'Test User 1',
-      email: 'test1@example.com',
-      password: await bcrypt.hash('password123', 10),
+      name: 'cat',
+      email: 'cat@tamu.edu',
+      password: await bcrypt.hash('cat', 10),
       elo: 1500,
       problemsSolved: 5,
     },
     {
-      name: 'Test User 2',
-      email: 'test2@example.com',
-      password: await bcrypt.hash('password123', 10),
+      name: 'dog',
+      email: 'dog@tamu.edu',
+      password: await bcrypt.hash('dog', 10),
       elo: 1400,
       problemsSolved: 3,
     },
