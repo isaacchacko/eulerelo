@@ -6,7 +6,9 @@ import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { evaluate, parse } from "mathjs";
+import BlurText from './BlurText';
 import Link from "next/link";
+import {motion, AnimatePresence} from 'framer-motion'
 
 // latex
 import { BlockMath } from 'react-katex';
@@ -137,6 +139,8 @@ export default function RoomPage() {
   const [role, setRole] = useState("Unknown");
   const [buzzInputText, setBuzzInputText] = useState('Enter your answer...');
   const [roundNumber, setRoundNumber] = useState<Number | null>(null);
+  const [playscreen, setPlayScreen] = useState(false);
+  const [stage, setStage] = useState("center"); // can be center, top or done
 
   useEffect(() => {
     if (status === "loading" || typeof window === "undefined") return;
@@ -253,115 +257,215 @@ export default function RoomPage() {
 
   };
 
-  return (
-    <div className='flex justify-center'>
-      <div className=" mx-auto sm:p-4 w-[80%]">
-        <div className='flex flex-row justify-center mb-2 text-xl'>
-          <div className='py-3'>
-            <div className='flex flex-col gap-3 justify-center'>
-              <span className='text-2xl font-black text-center block sm:hidden'>Round 1/5</span>
-              <div className='grid grid-cols-4 gap-3'>
+  // we want to know if we are blue player
+  const isBlue = displayName === bluePlayer.name 
+  
+  
+  const handleAnimationComplete = () => {
+    console.log('Animation completed!');
+    setTimeout(() => setStage("top"), 500);
+  };
 
-                <div className="col-span-3 overflow-hidden bg-gray-300 dark:bg-black py-3 px-3 border-rounded rounded-lg flex flex-row gap-2 sm:scale-90 sm:hover:scale-100 transition-transform duration-300 items-center">
-                  <img className="w-5" src="/globe.svg" alt="Dummy icon for user 2" />
-                  <Link
-                    href={"/profile/" + bluePlayer.name}
-                    className='hover:text-blue-500 hover:underline'
-                    title={bluePlayer.name}
-                  >
-                    {bluePlayer.name}
-                  </Link>
-                  <div className={`w-3 h-3 rounded-full  ${bluePlayer.active ? "bg-green-500 animate-pulse" : "bg-gray-500"}`} title={`"${bluePlayer.name}" is ${bluePlayer.active ? 'online' : 'offline'}`} />
-                </div>
-                <span className='self-center text-2xl font-black text-center block sm:hidden'>0</span>
+  const handleMoveToTopComplete = () => {
+    setTimeout(() => setStage("done"), 300)
+  }
 
-                <div className="col-span-3 overflow-hidden bg-gray-300 dark:bg-black py-3 px-3 border-rounded rounded-lg flex flex-row gap-2 sm:scale-90 sm:hover:scale-100 transition-transform duration-300 items-center">
-                  <img className="w-5" src="/globe.svg" alt="Dummy icon for user 1" />
-                  <Link
-                    href={"/profile/" + redPlayer.name}
-                    className='hover:text-blue-500 hover:underline'
-                    title={redPlayer.name}
-                  >
-                    {redPlayer.name}
-                  </Link>
-                  <div className={`w-3 h-3 rounded-full  ${redPlayer.active ? "bg-green-500 animate-pulse" : "bg-gray-500"}`} title={`"${redPlayer.name}" is ${redPlayer.active ? 'online' : 'offline'}`} />
-                </div>
-                <span className='self-center text-2xl font-black text-center block sm:hidden'>0</span>
-              </div>
-            </div>
-            <h3 className="hidden sm:block text-center">vs</h3>
+  // this is the screen before any questions; introduces opponent and elo, along with times
+  if (!playscreen){
+    return(
+      <>
+        <div >
+        <motion.div
+        layout
+        initial={{
+          top: '30%',
+          left: '10%',
+          x: '10%',
+          y: '-50%',
+          position: 'absolute',
+          width: '70%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          scale: 2.7,
+        }}
+        animate={
+          stage != 'center'
+            ? {
+                top: '9%',
+                left: '10%',
+                x: '10%',
+                y: 0,
+                scale: 1,
+                position: 'absolute',
+                width: '70%',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+              }
+            : {}
+        }
+        transition={{ 
+          type: 'spring', 
+          stiffness: 80, 
+          damping: 18,
+          scale: { duration: 0.6 }
+        }}
+        onAnimationComplete={() => {
+          if (stage === 'top') handleMoveToTopComplete();
+        }}
+        style={{
+          zIndex: 2,
+        }}
+      >
+        
+          <BlurText
+           text = "TIME TO DUEL!"
+           delay = {1000}
+           animateBy = "words"
+           direction = "top"
+           onAnimationComplete={handleAnimationComplete}
+           className = "text-4xl justify-center mt-4"
+          />
+        </motion.div>
+        
+        
+        <AnimatePresence>
+          {stage === 'done' &&(
+            <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+            style={{
+              position: 'relative',
+              zIndex: 1,
+              marginTop: '120px',
+              
+            }}
+          >
+            <h1 className = "text-2xl"> your opponent is {isBlue ? redPlayer.name : bluePlayer.name}</h1>
 
-          </div>
+          </motion.div>
 
+          )}
+
+        </AnimatePresence>
         </div>
-        {/* put everything in a big div */}
-        <div className="flex flex-col sm:flex-row">
-          <div className="w-full flex flex-col justify-center text-4xl">
-            <BlockMath math={"E=mc^2"} />
-          </div>
+      </>
+    );
+  }
 
+  // actual question
+  else{
+    return (
+      <div className='flex justify-center'>
+        <div className=" mx-auto sm:p-4 w-[80%]">
+          <div className='flex flex-row justify-center mb-2 text-xl'>
+            <div className='py-3'>
+              <div className='flex flex-col gap-3 justify-center'>
+                <span className='text-2xl font-black text-center block sm:hidden'>Round 1/5</span>
+                <div className='grid grid-cols-4 gap-3'>
 
-          <div className="flex gap-2 my-2">
-            <input
-              className="flex-1 border rounded p-2 dark:bg-slate-700 min-w-0"
-              value={answerInput}
-              onChange={e => setAnswerInput(e.target.value)}
-              onKeyDown={!isBuzzCooldown ? e => e.key === 'Enter' && sendBuzz() : () => { }}
-              placeholder={buzzInputText}
-            />
-            <button
-              //the button should gray out when disabled
-              className={`px-4 py-2 rounded ${isBuzzCooldown
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-500 text-white'
-                }`}
-              onClick={sendBuzz}
-              disabled={isBuzzCooldown}
-            >
-              {isBuzzCooldown ? "Wait..." : 'Buzz'}
-            </button>
-          </div>
+                  <div className="col-span-3 overflow-hidden bg-gray-300 dark:bg-black py-3 px-3 border-rounded rounded-lg flex flex-row gap-2 sm:scale-90 sm:hover:scale-100 transition-transform duration-300 items-center">
+                    <img className="w-5" src="/globe.svg" alt="Dummy icon for user 2" />
+                    <Link
+                      href={"/profile/" + bluePlayer.name}
+                      className='hover:text-blue-500 hover:underline'
+                      title={bluePlayer.name}
+                    >
+                      {bluePlayer.name}
+                    </Link>
+                    <div className={`w-3 h-3 rounded-full  ${bluePlayer.active ? "bg-green-500 animate-pulse" : "bg-gray-500"}`} title={`"${bluePlayer.name}" is ${bluePlayer.active ? 'online' : 'offline'}`} />
+                  </div>
+                  <span className='self-center text-2xl font-black text-center block sm:hidden'>0</span>
 
-          <div className='w-full bg-black dark:bg-white h-1 my-10 block sm:hidden' />
-          <div className="flex flex-col w-full" >
-            <div className="border flex-grow rounded p-2 h-32 sm:h-64 overflow-y-auto mb-2 dark:bg-slate-700">
-              {messages.map((msg, idx) => (
-                msg.type === 'buzz' ?
-                  <div key={idx} className="mb-1 text-red-500">({msg.role}) {msg.username} : {msg.text}</div>
-                  :
-                  msg.type === "buzzCorrect" ?
-                    <div key={idx} className="mb-1 text-green-600">({msg.role}) {msg.username} : {msg.text}</div>
-                    :
-                    msg.type === "system" ?
-                      <div key={idx} className="mb-1 italic text-gray-500">{msg.text}</div>
-                      :
-                      <div key={idx} className="mb-1">({msg.role}) {msg.username} : {msg.text}</div>
+                  <div className="col-span-3 overflow-hidden bg-gray-300 dark:bg-black py-3 px-3 border-rounded rounded-lg flex flex-row gap-2 sm:scale-90 sm:hover:scale-100 transition-transform duration-300 items-center">
+                    <img className="w-5" src="/globe.svg" alt="Dummy icon for user 1" />
+                    <Link
+                      href={"/profile/" + redPlayer.name}
+                      className='hover:text-blue-500 hover:underline'
+                      title={redPlayer.name}
+                    >
+                      {redPlayer.name}
+                    </Link>
+                    <div className={`w-3 h-3 rounded-full  ${redPlayer.active ? "bg-green-500 animate-pulse" : "bg-gray-500"}`} title={`"${redPlayer.name}" is ${redPlayer.active ? 'online' : 'offline'}`} />
+                  </div>
+                  <span className='self-center text-2xl font-black text-center block sm:hidden'>0</span>
+                </div>
+              </div>
+              <h3 className="hidden sm:block text-center">vs</h3>
 
-
-              ))}
-              <div ref={messagesEndRef} />
             </div>
 
-            <div className="flex gap-2 mb-10">
+          </div>
+          {/* put everything in a big div */}
+          <div className="flex flex-col sm:flex-row">
+            <div className="w-full flex flex-col justify-center text-4xl">
+              <BlockMath math={"E=mc^2"} />
+            </div>
+
+
+            <div className="flex gap-2 my-2">
               <input
                 className="flex-1 border rounded p-2 dark:bg-slate-700 min-w-0"
-                value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && sendChat()}
-                placeholder="Send a chat..."
+                value={answerInput}
+                onChange={e => setAnswerInput(e.target.value)}
+                onKeyDown={!isBuzzCooldown ? e => e.key === 'Enter' && sendBuzz() : () => { }}
+                placeholder={buzzInputText}
               />
               <button
-                className="bg-blue-500 text-white px-4 py-2 rounded"
-                onClick={sendChat}
+                //the button should gray out when disabled
+                className={`px-4 py-2 rounded ${isBuzzCooldown
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-500 text-white'
+                  }`}
+                onClick={sendBuzz}
+                disabled={isBuzzCooldown}
               >
-                Send
+                {isBuzzCooldown ? "Wait..." : 'Buzz'}
               </button>
             </div>
+
+            <div className='w-full bg-black dark:bg-white h-1 my-10 block sm:hidden' />
+            <div className="flex flex-col w-full" >
+              <div className="border flex-grow rounded p-2 h-32 sm:h-64 overflow-y-auto mb-2 dark:bg-slate-700">
+                {messages.map((msg, idx) => (
+                  msg.type === 'buzz' ?
+                    <div key={idx} className="mb-1 text-red-500">({msg.role}) {msg.username} : {msg.text}</div>
+                    :
+                    msg.type === "buzzCorrect" ?
+                      <div key={idx} className="mb-1 text-green-600">({msg.role}) {msg.username} : {msg.text}</div>
+                      :
+                      msg.type === "system" ?
+                        <div key={idx} className="mb-1 italic text-gray-500">{msg.text}</div>
+                        :
+                        <div key={idx} className="mb-1">({msg.role}) {msg.username} : {msg.text}</div>
+
+
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className="flex gap-2 mb-10">
+                <input
+                  className="flex-1 border rounded p-2 dark:bg-slate-700 min-w-0"
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && sendChat()}
+                  placeholder="Send a chat..."
+                />
+                <button
+                  className="bg-blue-500 text-white px-4 py-2 rounded"
+                  onClick={sendChat}
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+          <div>
           </div>
         </div>
-        <div>
-        </div>
       </div>
-    </div>
-  );
+    );
+  }
 }
