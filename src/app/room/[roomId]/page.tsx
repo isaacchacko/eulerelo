@@ -126,7 +126,7 @@ export default function RoomPage() {
   const params = useParams();
   const roomId = params.roomId as string;
   const displayName = (session && session.user) ? session.user.name as string : getRandomThreeWordString();
-
+ 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [answerInput, setAnswerInput] = useState('');
@@ -160,6 +160,7 @@ export default function RoomPage() {
       const role = data.role;
       const roundNumber = data.roundNumber;
 
+
       if (role) {
         setRole(role);
         console.log("updateRoomInfo detected, i am now a " + role);
@@ -180,7 +181,7 @@ export default function RoomPage() {
       socketRef.current.emit('leaveRoom', roomId);
       socketRef.current.disconnect();
     }
-
+ 
     window.addEventListener('beforeunload', disconnect);
 
     return () => {
@@ -259,8 +260,9 @@ export default function RoomPage() {
 
   // we want to know if we are blue player
   const isBlue = displayName === bluePlayer.name 
-  
-  
+  //const ELO = bluePlayer.E 
+  const opponentName = isBlue ? redPlayer.name : bluePlayer.name
+  const elo = 1000 // CHANGE THIS LATER
   const handleAnimationComplete = () => {
     console.log('Animation completed!');
     setTimeout(() => setStage("top"), 500);
@@ -274,12 +276,12 @@ export default function RoomPage() {
   if (!playscreen){
     return(
       <>
-        <div >
+        <div className = "flex flex-col place-items-center">
         <motion.div
         layout
         initial={{
           top: '30%',
-          left: '10%',
+          left: '15%',
           x: '10%',
           y: '-50%',
           position: 'absolute',
@@ -293,7 +295,7 @@ export default function RoomPage() {
           stage != 'center'
             ? {
                 top: '9%',
-                left: '10%',
+                left: '15%',
                 x: '10%',
                 y: 0,
                 scale: 1,
@@ -308,7 +310,7 @@ export default function RoomPage() {
           type: 'spring', 
           stiffness: 80, 
           damping: 18,
-          scale: { duration: 0.6 }
+          scale: { duration: 0.4 }
         }}
         onAnimationComplete={() => {
           if (stage === 'top') handleMoveToTopComplete();
@@ -320,11 +322,11 @@ export default function RoomPage() {
         
           <BlurText
            text = "TIME TO DUEL!"
-           delay = {1000}
+           delay = {800}
            animateBy = "words"
            direction = "top"
            onAnimationComplete={handleAnimationComplete}
-           className = "text-4xl justify-center mt-4"
+           className = "text-5xl justify-center mt-4"
           />
         </motion.div>
         
@@ -332,9 +334,10 @@ export default function RoomPage() {
         <AnimatePresence>
           {stage === 'done' &&(
             <motion.div
+            className = "place-items-center w-1/2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 1 }}
+            transition={{ duration: 0.3 }}
             style={{
               position: 'relative',
               zIndex: 1,
@@ -342,8 +345,14 @@ export default function RoomPage() {
               
             }}
           >
-            <h1 className = "text-2xl"> your opponent is {isBlue ? redPlayer.name : bluePlayer.name}</h1>
-
+            <div className = "group hover:scale-105 hover:shadow-blue-500 shadow-lg mt-3 flex-col w-full flex place-items-center justify-content bg-slate-200 dark:bg-slate-500 rounded-2xl transition-all">
+              <h2 className = "text-2xl place-items-center mt-5"> Your Opponent Is: </h2>
+              <h1 className = "text-3xl  place-items-center mb-1 mt-2 group-hover:scale-125 group-hover:text-blue-500 transition-all"> {opponentName} </h1>
+              <div className = "flex">
+              <p className = "group-hover:opacity-100 opacity-0"> ELO = </p>
+              <p className = "group-hover:opacity-100 opacity-0 text-blue-500"> {elo}</p>
+              </div>
+            </div>
           </motion.div>
 
           )}
