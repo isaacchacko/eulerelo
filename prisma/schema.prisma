@@ -8,12 +8,39 @@ datasource db {
 }
 
 model User {
-  id             String   @id @default(cuid())
-  name           String   @unique
-  email          String   @unique
+  id             String         @id @default(cuid())
+  name           String         @unique
+  email          String         @unique
   password       String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  elo            Int            @default(1000)
+  problemsSolved Int            @default(0)
+  MatchHistory   MatchHistory[]
+}
+
+model MatchHistory {
+  id         Int      @id @default(autoincrement())
+  matchId    String
+  userId     String
+  eloDelta   Int
+  createdAt  DateTime @default(now())
+  categories String[]
+  matchType  String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([matchId, userId])
+}
+
+model Problem {
+  id             Int      @id @default(autoincrement())
+  title          String
+  problem        String
+  variableBounds Json
+  solution       String
+  difficulty     String?
+  tags           Json?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  elo            Int      @default(1000)
-  problemsSolved Int      @default(0)
 }
