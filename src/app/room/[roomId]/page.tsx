@@ -9,6 +9,7 @@ import { evaluate, parse } from "mathjs";
 import BlurText from './BlurText';
 import Link from "next/link";
 import {motion, AnimatePresence} from 'framer-motion'
+import { Timer } from '@/components/timer';
 
 // latex
 import { BlockMath } from 'react-katex';
@@ -258,24 +259,36 @@ export default function RoomPage() {
 
   };
 
-  // we want to know if we are blue player
-  const isBlue = displayName === bluePlayer.name 
-  //const ELO = bluePlayer.E 
-  const opponentName = isBlue ? redPlayer.name : bluePlayer.name
-  const elo = 1000 // CHANGE THIS LATER
-  const handleAnimationComplete = () => {
-    console.log('Animation completed!');
-    setTimeout(() => setStage("top"), 500);
-  };
 
-  const handleMoveToTopComplete = () => {
-    setTimeout(() => setStage("done"), 300)
+/////////////////////////////////////////////////// move to top whatever in box, i do later cuz lazy //////
+  // we want to know if we are blue player                                                           //////
+  const isBlue = displayName === bluePlayer.name                                                     ////// 
+  //const ELO = bluePlayer.E                                                                         //////
+  const opponentName = isBlue ? redPlayer.name : bluePlayer.name                                     //////
+  const elo = 1000 // CHANGE THIS LATER                                                              //////
+  const handleAnimationComplete = () => {                                                            //////
+    console.log('Animation completed!');                                                             //////
+    setTimeout(() => setStage("top"), 500);                                                          //////
+  };                                                                                                 //////
+                                                                                                     //////
+  const handleMoveToTopComplete = () => {                                                            //////
+    setTimeout(() => setStage("done"), 300)                                                          //////
+  } 
+  
+  const handleStartTimerFinish = () => {
+    setPlayScreen(true)
   }
+  //////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // this is the screen before any questions; introduces opponent and elo, along with times
-  if (!playscreen){
+  
+    
+
     return(
+      
       <>
+      {!playscreen && (
         <div className = "flex flex-col place-items-center">
         <motion.div
         layout
@@ -353,20 +366,16 @@ export default function RoomPage() {
               <p className = "group-hover:opacity-100 opacity-0 text-blue-500"> {elo}</p>
               </div>
             </div>
+            <Timer onTimerFinish={handleStartTimerFinish} />
           </motion.div>
 
           )}
 
         </AnimatePresence>
         </div>
-      </>
-    );
-  }
-
-  // actual question
-  else{
-    return (
-      <div className='flex justify-center'>
+      )}
+      {playscreen && (
+        <div className='flex justify-center'>
         <div className=" mx-auto sm:p-4 w-[80%]">
           <div className='flex flex-row justify-center mb-2 text-xl'>
             <div className='py-3'>
@@ -475,6 +484,11 @@ export default function RoomPage() {
           </div>
         </div>
       </div>
+      )}
+      </>
     );
-  }
+  
+
+  // actual question
+
 }
