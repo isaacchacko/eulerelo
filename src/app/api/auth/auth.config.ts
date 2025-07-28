@@ -40,7 +40,8 @@ export const authConfig = {
         return {
           id: user.id,
           email: user.email,
-          name: user.name
+          name: user.name,
+          elo: user.elo
         };
       }
     })
@@ -56,14 +57,28 @@ export const authConfig = {
   callbacks: {
     async session({ session, token }) {
       if (session?.user) {
-        session.user.id = token.sub!;
+
+        // sub = subject <= gets mapped to id value by default
+        session.user = {
+          id: token.sub!,
+          name: token.name,
+          email: token.email,
+          elo: token.elo
+        };
+
       }
       return session;
     },
     async jwt({ token, user }) {
+
       if (user) {
-        token.id = user.id;
+        token.elo = user.elo;
+        token.name = user.name;
+        token.email = user.email;
+
+        // id field is automatically attached to token.sub
       }
+
       return token;
     }
   },

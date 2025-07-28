@@ -1,4 +1,3 @@
-
 {
   "name": "socket-server",
   "main": "server.js",
@@ -9,5 +8,9 @@
     "express": "^4.18.2",
     "socket.io": "^4.7.5",
     "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "typescript": "^5.8.3"
   }
 }

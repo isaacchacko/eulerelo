@@ -16,8 +16,9 @@ const MatchmakingPage = () => {
     if (!session) return;
     if (!session.user) return;
 
+    console.log("ran! session.user", session.user);
     socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
-    socketRef.current.emit('joinMatchmaking', session.user.name);
+    socketRef.current.emit('joinMatchmaking', session.user);
 
     socketRef.current.on('matched', (roomId: string) => {
       router.push(`/room/${roomId}`);

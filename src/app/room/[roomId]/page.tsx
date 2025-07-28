@@ -8,13 +8,11 @@ import { usePathname } from 'next/navigation';
 import { evaluate, parse } from "mathjs";
 import BlurText from './BlurText';
 import Link from "next/link";
-import {motion, AnimatePresence} from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { User, Competitor } from '@/socket-server/types';
 
 // latex
 import { BlockMath } from 'react-katex';
-
-import CopyLinkButton from '@/components/CopyLinkButton';
-import path from 'path';
 
 const BUZZ_COOLDOWN = 3000;
 
@@ -47,16 +45,13 @@ const RoundResults = ({ results }) => (
 // const results = ['won', 'lost', 'undecided', 'won', 'lost'];
 // <RoundResults results={results} />
 
-interface User {
-  id: string;
-  name: string;
-  active: boolean;
-}
-
-const defaultUser: User = {
+const defaultUser: Competitor = {
   id: "",
   name: "Unknown",
-  active: false
+  active: false,
+  score: 0,
+  email: "unknown@unknown.com",
+  elo: 0
 };
 
 type MessageType = 'chat' | 'buzz' | 'buzzCorrect' | 'system';
@@ -134,12 +129,12 @@ export default function RoomPage() {
   const [check, setCheck] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [isBuzzCooldown, setIsBuzzCooldown] = useState(false);
-  const [redPlayer, setRedPlayer] = useState<User>(defaultUser);
-  const [bluePlayer, setBluePlayer] = useState<User>(defaultUser);
+  const [redPlayer, setRedPlayer] = useState<Competitor>(defaultUser);
+  const [bluePlayer, setBluePlayer] = useState<Competitor>(defaultUser);
   const [role, setRole] = useState("Unknown");
   const [buzzInputText, setBuzzInputText] = useState('Enter your answer...');
   const [roundNumber, setRoundNumber] = useState<Number | null>(null);
-  const [playscreen, setPlayScreen] = useState(false);
+  const [playscreen, setPlayScreen] = useState(true);
   const [stage, setStage] = useState("center"); // can be center, top or done
 
   useEffect(() => {
@@ -148,7 +143,7 @@ export default function RoomPage() {
     const displayName = session?.user?.name || getRandomThreeWordString();
 
     socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
-    socketRef.current.emit("joinRoom", roomId, displayName);
+    socketRef.current.emit("joinRoom", roomId, session?.user || undefined);
 
     socketRef.current.on('message', (type: string, text: string, username: string, role: string) => {
       setMessages(prev => [...prev, { type: type, text: text, username: username, role: role } as ChatMessage]);
@@ -156,7 +151,7 @@ export default function RoomPage() {
 
     socketRef.current.on('updateRoomInfo', (data) => {
       if (!socketRef.current) return;
-      const opponents = data.opponents;
+      const competitors = data.competitors;
       const role = data.role;
       const roundNumber = data.roundNumber;
 
@@ -165,13 +160,16 @@ export default function RoomPage() {
         console.log("updateRoomInfo detected, i am now a " + role);
       }
 
-      if (opponents) {
-        setBluePlayer(opponents[0]);
-        setRedPlayer(opponents[1]);
+      if (competitors) {
+        const competitorList: Competitor[] = Object.values(competitors); // TODO: convert Competitors to two competitors
+        setBluePlayer(competitorList[0]);
+        setRedPlayer(competitorList[1]);
+        console.log("updateRoomInfo: competitors changed: ", competitors);
       }
 
       if (roundNumber) {
         setRoundNumber(roundNumber)
+        console.log("updateRoomInfo: roundNumber changed: ", roundNumber);
       }
     });
 
@@ -258,9 +256,9 @@ export default function RoomPage() {
   };
 
   // we want to know if we are blue player
-  const isBlue = displayName === bluePlayer.name 
-  
-  
+  const isBlue = displayName === bluePlayer.name
+
+
   const handleAnimationComplete = () => {
     console.log('Animation completed!');
     setTimeout(() => setStage("top"), 500);
@@ -271,91 +269,91 @@ export default function RoomPage() {
   }
 
   // this is the screen before any questions; introduces opponent and elo, along with times
-  if (!playscreen){
-    return(
+  if (!playscreen) {
+    return (
       <>
         <div >
-        <motion.div
-        layout
-        initial={{
-          top: '30%',
-          left: '10%',
-          x: '10%',
-          y: '-50%',
-          position: 'absolute',
-          width: '70%',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          scale: 2.7,
-        }}
-        animate={
-          stage != 'center'
-            ? {
-                top: '9%',
-                left: '10%',
-                x: '10%',
-                y: 0,
-                scale: 1,
-                position: 'absolute',
-                width: '70%',
-                justifyContent: 'center',
-                alignItems: 'flex-start',
-              }
-            : {}
-        }
-        transition={{ 
-          type: 'spring', 
-          stiffness: 80, 
-          damping: 18,
-          scale: { duration: 0.6 }
-        }}
-        onAnimationComplete={() => {
-          if (stage === 'top') handleMoveToTopComplete();
-        }}
-        style={{
-          zIndex: 2,
-        }}
-      >
-        
-          <BlurText
-           text = "TIME TO DUEL!"
-           delay = {1000}
-           animateBy = "words"
-           direction = "top"
-           onAnimationComplete={handleAnimationComplete}
-           className = "text-4xl justify-center mt-4"
-          />
-        </motion.div>
-        
-        
-        <AnimatePresence>
-          {stage === 'done' &&(
-            <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1 }}
+          <motion.div
+            layout
+            initial={{
+              top: '30%',
+              left: '10%',
+              x: '10%',
+              y: '-50%',
+              position: 'absolute',
+              width: '70%',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              scale: 2.7,
+            }}
+            animate={
+              stage != 'center'
+                ? {
+                  top: '9%',
+                  left: '10%',
+                  x: '10%',
+                  y: 0,
+                  scale: 1,
+                  position: 'absolute',
+                  width: '70%',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                }
+                : {}
+            }
+            transition={{
+              type: 'spring',
+              stiffness: 80,
+              damping: 18,
+              scale: { duration: 0.6 }
+            }}
+            onAnimationComplete={() => {
+              if (stage === 'top') handleMoveToTopComplete();
+            }}
             style={{
-              position: 'relative',
-              zIndex: 1,
-              marginTop: '120px',
-              
+              zIndex: 2,
             }}
           >
-            <h1 className = "text-2xl"> your opponent is {isBlue ? redPlayer.name : bluePlayer.name}</h1>
 
+            <BlurText
+              text="TIME TO DUEL!"
+              delay={1000}
+              animateBy="words"
+              direction="top"
+              onAnimationComplete={handleAnimationComplete}
+              className="text-4xl justify-center mt-4"
+            />
           </motion.div>
 
-          )}
 
-        </AnimatePresence>
+          <AnimatePresence>
+            {stage === 'done' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  marginTop: '120px',
+
+                }}
+              >
+                <h1 className="text-2xl"> your opponent is {isBlue ? redPlayer.name : bluePlayer.name}</h1>
+
+              </motion.div>
+
+            )}
+
+          </AnimatePresence>
         </div>
       </>
     );
   }
 
   // actual question
-  else{
+  else {
     return (
       <div className='flex justify-center'>
         <div className=" mx-auto sm:p-4 w-[80%]">

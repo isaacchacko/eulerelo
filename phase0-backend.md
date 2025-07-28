@@ -21,7 +21,7 @@
 
 - [x] create this document
 - [x] design new table schema for the "MatchHistory", "Problems" and push migration to docker db
-- [ ] refactor socket server
+- [x] refactor socket server
 - [ ] design problem + solution structure and redesign evaluation function accordingly. pull out the evaluation away from the client side and onto server side.
 - [ ] round tracking function.
 - [ ] elo calculation
