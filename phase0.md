@@ -25,8 +25,8 @@
 - gameplay
   - frontend
     - notification screens
-      - [ ] round starts in: 3 2 1
-        - should contain player names, elos, problems solved (just whatever we can display from the db)
+      - [x] round starts in: 3 2 1
+        - should contain player names, elos, problems solved (just whatever we can display from the db), executive decision: problems solved != necessary
       - [ ] problem solved! next problem:
         - who solved the problem, how long did they take, any wrong solutions they tried before
         - next problem countdown (change "next" to "final" on problem 5/5)
