@@ -140,9 +140,9 @@ export default function RoomPage() {
   const [role, setRole] = useState("Unknown");
   const [buzzInputText, setBuzzInputText] = useState('Enter your answer...');
   const [roundNumber, setRoundNumber] = useState<Number | null>(null);
-  const [playscreen, setPlayScreen] = useState(false);
+  const [playscreen, setPlayScreen] = useState("startScreen");
   const [stage, setStage] = useState("center"); // can be center, top or done
-
+  const [qWinner, setQWinner] = useState("")
   useEffect(() => {
     if (status === "loading" || typeof window === "undefined") return;
 
@@ -224,7 +224,8 @@ export default function RoomPage() {
     setCheck(validity);
 
     if (validity) {
-      //if its correct we want the type to be buzzCorrect
+      //if its correct we want the type to be buzzCorrect, and change the playscreen to the got it right screen
+      //setPlayScreen("betweenScreen") 
       if (answerInput.trim() && socketRef.current) {
         socketRef.current.emit('message', {
           roomId: roomId,
@@ -276,8 +277,20 @@ export default function RoomPage() {
   } 
   
   const handleStartTimerFinish = () => {
-    setPlayScreen(true)
+    setPlayScreen("question1")
   }
+
+  useEffect(() => {
+   messages.map((msg, idx) => {
+    if (msg.type === 'buzzCorrect') { 
+      setPlayScreen("betweenScreen") 
+      setQWinner(msg.username)
+      setMessages([])
+    } else { 
+      console.log ("what a bum")
+    }
+   }) 
+  }, [messages, sendBuzz])
   //////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -288,7 +301,7 @@ export default function RoomPage() {
     return(
       
       <>
-      {!playscreen && (
+      {playscreen === "startScreen" && (
         <div className = "flex flex-col place-items-center">
         <motion.div
         layout
@@ -374,7 +387,7 @@ export default function RoomPage() {
         </AnimatePresence>
         </div>
       )}
-      {playscreen && (
+      {playscreen === "question1" && (
         <div className='flex justify-center'>
         <div className=" mx-auto sm:p-4 w-[80%]">
           <div className='flex flex-row justify-center mb-2 text-xl'>
@@ -484,6 +497,14 @@ export default function RoomPage() {
           </div>
         </div>
       </div>
+      )}
+      {playscreen === "betweenScreen" && (
+        <div>
+          <h1> Question Over</h1>
+          <h1> {qWinner === displayName ? "YOU GOT IT RIGHT": " TOUGH LUCK"}</h1>
+          <Timer onTimerFinish = {handleStartTimerFinish} /> 
+          {/* //temporary code for timer handle */}
+        </div>
       )}
       </>
     );
