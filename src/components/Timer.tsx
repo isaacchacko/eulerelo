@@ -23,7 +23,7 @@ export const Timer : React.FC<TimerProps> = ({onTimerFinish}) => {
 
     return(
         <div className = "">
-            <h1 className = {`${(isRed ) ? "text-red-600" : ""} transition-none text-4xl mt-8`} > {formattedTime} {isRed}</h1>
+            <h1 className = {`${(isRed ) ? "text-red-600" : ""} transition-none text-4xl`} > {formattedTime} {isRed}</h1>
         </div>
     )
 }
