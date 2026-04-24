@@ -39,7 +39,7 @@ const fallbackProblems = [
     title: 'Log Difference',
     promptTemplate: 'Compute log({{x}}) - log({{y}}).',
     answerExpression: 'log(x) - log(y)',
-    variableSpec: { x: { min: 2, max: 20 }, y: { min: 1, max: 10 } },
+    variableSpec: { x: { min: 10, max: 20 }, y: { min: 1, max: 10 } },
     difficulty: 1
   },
   {
