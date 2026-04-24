@@ -7,10 +7,9 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { connectSocket, getSocket } from "@/lib/socket";
 import AuthProtected from "@/components/auth-protected";
 
 /**
@@ -20,7 +19,7 @@ import AuthProtected from "@/components/auth-protected";
  * @returns The duel page component
  */
 export default function DuelPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const [isSearching, setIsSearching] = useState(false);
 
@@ -64,7 +63,7 @@ export default function DuelPage() {
                   </h2>
                   <p className="mt-2 text-gray-600 dark:text-gray-300">
                     A Math Duel is a real-time competition between two players, testing both mathematical 
-                    knowledge and speed. You'll be matched with an opponent of similar skill level for 
+                    knowledge and speed. You&apos;ll be matched with an opponent of similar skill level for 
                     a fast-paced battle of mathematical prowess.
                   </p>
                 </div>
@@ -91,7 +90,7 @@ export default function DuelPage() {
                     Tips for Success
                   </h2>
                   <p className="mt-2 text-gray-600 dark:text-gray-300">
-                    Focus on accuracy first, then speed. A wrong answer earns no points, so it's better 
+                    Focus on accuracy first, then speed. A wrong answer earns no points, so it&apos;s better 
                     to take your time and get it right. Practice regularly to improve both your knowledge 
                     and solving speed.
                   </p>
@@ -131,7 +130,7 @@ export default function DuelPage() {
             <p className="text-gray-600 dark:text-gray-300">
               Every duel affects your Eulerelo rating. Win duels to climb the leaderboard and 
               earn your place among the top mathematicians. Your rating will be updated after 
-              each duel based on the result and your opponent's rating.
+              each duel based on the result and your opponent&apos;s rating.
             </p>
             <div className="mt-4">
               <a 

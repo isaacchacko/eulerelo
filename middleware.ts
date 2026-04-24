@@ -1,6 +1,7 @@
 // middleware.ts
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { AUTH_SECRET } from "@/lib/auth-secret";
 
 // Define protected routes that require authentication
 const protectedRoutes = [
@@ -31,6 +32,10 @@ export default withAuth(
     return NextResponse.next();
   },
   {
+    secret: AUTH_SECRET,
+    pages: {
+      signIn: "/login",
+    },
     callbacks: {
       authorized: ({ token, req }) => {
         const { pathname } = req.nextUrl;

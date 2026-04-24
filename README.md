@@ -23,7 +23,7 @@ The Eulerelo Practice Room
 
 ## Tech Stack
 
-- Next.js 14 with App Router
+- Next.js 15 with App Router
 - TypeScript
 - NextAuth.js for authentication
 - Prisma with PostgreSQL
@@ -56,11 +56,21 @@ The Eulerelo Practice Room
    npx prisma db push
    ```
 
-5. Run the development server:
+5. Run the app in **two terminals** (web and socket are separate processes):
+
+   **Terminal 1 — Next.js**
 
    ```bash
    npm run dev
    ```
+
+   **Terminal 2 — Socket.IO server**
+
+   ```bash
+   npm run start:socket
+   ```
+
+   Ensure `.env` / `.env.local` set `NEXT_PUBLIC_SOCKET_SERVER_URL` to the socket URL (for example `http://localhost:3001` when using the default `SOCKET_PORT`).
 
 6. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
@@ -69,11 +79,41 @@ The Eulerelo Practice Room
 ### `.env`
 
 - `DATABASE_URL`: PostgreSQL database connection URL
+- `SOCKET_PORT`: Port used by the socket server (default: `3001`)
 
 ### `.env.local`
 
 - `NEXTAUTH_URL`: Base URL of your application
 - `NEXTAUTH_SECRET`: Secret key for NextAuth.js (generate with `openssl rand -base64 32`)
+- `NEXT_PUBLIC_SOCKET_SERVER_URL`: Public URL of the socket server used by client pages (for local dev: `http://localhost:3001`)
+
+## Deployment Topology (Demo)
+
+This project uses two runtime services:
+
+1. **Web app service** (Next.js)
+   - Build: `npm run build`
+   - Start: `npm run start`
+2. **Socket service** (Socket.IO + Express)
+   - Start: `npm run start:socket`
+
+For hosted demos, set `NEXT_PUBLIC_SOCKET_SERVER_URL` in the web app service to the deployed socket service URL.
+
+## Demo Smoke Checklist
+
+Before class:
+
+1. Run database sync and seed:
+   - `npx prisma db push`
+   - `npm run prisma:seed` (or `npx prisma db seed`)
+2. Start both local services (two terminals):
+   - `npm run dev`
+   - `npm run start:socket`
+3. Verify with two accounts in separate browsers:
+   - both join matchmaking and enter the same room
+   - each round receives a new random problem
+   - answer correctness appears for both clients
+   - match ends with a winner and score summary
 
 ## Contributing
 

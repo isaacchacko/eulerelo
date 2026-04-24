@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import { verifyPassword } from "@/lib/auth";
+import { AUTH_SECRET } from "@/lib/auth-secret";
 
 const prisma = new PrismaClient();
 
-// @ts-ignore
 export const authConfig = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -68,5 +67,5 @@ export const authConfig = {
     }
   },
   debug: process.env.NODE_ENV === "development",
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: AUTH_SECRET,
 }; 

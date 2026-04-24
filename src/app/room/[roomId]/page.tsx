@@ -1,23 +1,12 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
-import { evaluate, parse } from "mathjs";
-import Link from "next/link";
-
-// latex
-import { BlockMath } from 'react-katex';
+import Link from 'next/link';
 
 import CopyButton from '@/components/CopyButton';
-import path from 'path';
-
-const upper = 5;
-const lower = 1;
-const answerFormula = "log(x)-log(y)";
-
 
 type MessageType = 'chat' | 'buzz' | 'buzzCorrect' | 'system';
 
@@ -28,254 +17,262 @@ interface ChatMessage {
   type: MessageType;
 }
 
-
-function checkAnswer(
-  answer: string,
-  answerFormula: string,
-  x: number,
-  y: number,
-  tolerance: 0.001
-): boolean {
-  try {
-    const scope = { x, y };
-    const parsedFormula = parse(answerFormula);
-    const correct = parsedFormula.evaluate({ x, y }) as number;
-
-    // check for ln and log
-    if (answer.includes("log")) {
-      // such a budget fix but its fine
-      answer = answer.replaceAll(")", ",10)");
-    }
-
-    answer = answer.replaceAll("ln", "log");
-
-    try {
-      answer = parse(answer).evaluate(scope);
-    } catch (error) { // to catch errors when evaluating non-math
-      console.log('Caught undefined symbol error:', error);
-      return false; // since answer was non-math
-    }
-
-    console.log(`user answered: ${answer}`);
-
-    // convert to number to match the remaining usage of answer variable
-    const numeric_answer = Number(answer);
-
-    // means it is neither an accepted number or formula
-    // apparently js isNaN tries to typecast anything to number while
-    // tsx expects only numbers
-    if (isNaN(numeric_answer)) return false;
-
-    // return whether the numeric_answer is within tolerance
-    console.log(Math.abs(numeric_answer - correct) <= tolerance)
-    return Math.abs(numeric_answer - correct) <= tolerance;
-  } catch (error) {
-    console.error("validation error: ", error);
-    return false;
-  }
+interface PlayerScore {
+  userId: string;
+  username: string;
+  score: number;
 }
 
-const words = ["velvet", "mango", "sunrise", "crimson", "forest", "echo", "silver", "breeze", "shadow", "amber", "river", "whisper", "cosmic", "pearl", "ember", "lunar", "sage", "harbor"];
+const words = [
+  'velvet',
+  'mango',
+  'sunrise',
+  'crimson',
+  'forest',
+  'echo',
+  'silver',
+  'breeze',
+  'shadow',
+  'amber',
+  'river',
+  'whisper',
+  'cosmic',
+  'pearl',
+  'ember',
+  'lunar',
+  'sage',
+  'harbor',
+];
 
 const getRandomThreeWordString = () =>
   Array.from({ length: 3 }, () => words[Math.floor(Math.random() * words.length)]).join('-');
 
 export default function RoomPage() {
-
   const { data: session } = useSession();
   const params = useParams();
   const roomId = params.roomId as string;
-  const displayName = (session && session.user) ? session.user.name as string : getRandomThreeWordString();
+  const displayName =
+    session && session.user?.name ? (session.user.name as string) : getRandomThreeWordString();
+  const userId = (session?.user as { id?: string } | undefined)?.id || '';
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [answerInput, setAnswerInput] = useState('');
   const socketRef = useRef<Socket | null>(null);
-  const [check, setCheck] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [isBuzzCooldown, setIsBuzzCooldown] = useState(false);
-  const [redPlayer, setRedPlayer] = useState("Unknown");
-  const [bluePlayer, setBluePlayer] = useState("Unknown");
-  const [role, setRole] = useState("Unknown");
+  const [isAnswerCooldown, setIsAnswerCooldown] = useState(false);
+  const [players, setPlayers] = useState<PlayerScore[]>([]);
+  const [role, setRole] = useState('Unknown');
+  const [currentPrompt, setCurrentPrompt] = useState('Waiting for both competitors...');
+  const [roundIndex, setRoundIndex] = useState(0);
+  const [totalRounds, setTotalRounds] = useState(0);
+  const [winnerText, setWinnerText] = useState('');
+  const [matchEnded, setMatchEnded] = useState(false);
+
+  const sortedPlayers = useMemo(() => [...players].sort((a, b) => b.score - a.score), [players]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
-
-      socketRef.current.emit("joinRoom", roomId, displayName);
-
-      socketRef.current.on('message', (type: string, text: string, username: string, role: string) => {
-        setMessages(prev => [...prev, { type: type, text: text, username: username, role: role } as ChatMessage]);
-      });
-
-      socketRef.current.on('recall', (data) => {
-        const opponents = data.opponents;
-        setRole(data.role);
-
-        if (data.role === "Competitor") {
-
-          console.log("recall detected, i am a competitor");
-          const opp = opponents.find((player: { id: string; username: string; }) => player.username !== displayName);
-          if (opp) setRedPlayer(opp.username);
-          setBluePlayer(displayName);
-        } else {
-          console.log("recall detected, i am a spectator");
-          setBluePlayer(opponents[0].username);
-          setRedPlayer(opponents[1].username);
-        }
-      });
-
-      return () => {
-        socketRef.current?.emit('leaveRoom', roomId, displayName);
-        socketRef.current?.disconnect();
-      };
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
+  }, [messages]);
 
-  }, []);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
+    socketRef.current.emit('joinRoom', roomId, {
+      userId,
+      username: displayName,
+    });
+
+    socketRef.current.on('message', (type: MessageType, text: string, username: string, msgRole: string) => {
+      setMessages((prev) => [
+        ...prev,
+        { type, text, username, role: msgRole } as ChatMessage,
+      ]);
+    });
+
+    socketRef.current.on('recall', (data) => {
+      setRole(data.role || 'Unknown');
+      setPlayers(data.opponents || []);
+      if (typeof data.currentRound === 'number') {
+        setRoundIndex(data.currentRound);
+      }
+      if (typeof data.totalRounds === 'number') {
+        setTotalRounds(data.totalRounds);
+      }
+      if (data.status === 'COMPLETED' || data.status === 'ABORTED') {
+        setMatchEnded(true);
+      }
+    });
+
+    socketRef.current.on('scoreUpdate', (payload: { scores: PlayerScore[] }) => {
+      setPlayers(payload.scores || []);
+    });
+
+    socketRef.current.on('roundStart', (payload: { roundIndex: number; totalRounds: number; prompt: string }) => {
+      setRoundIndex(payload.roundIndex);
+      setTotalRounds(payload.totalRounds);
+      setCurrentPrompt(payload.prompt);
+      setWinnerText('');
+    });
+
+    socketRef.current.on('answerResult', (payload: { correct: boolean; username: string; rawAnswer: string }) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: payload.correct ? 'buzzCorrect' : 'buzz',
+          text: payload.rawAnswer,
+          username: payload.username,
+          role: 'Competitor',
+        },
+      ]);
+    });
+
+    socketRef.current.on('roundClosed', (payload: { winnerUsername: string; roundIndex: number }) => {
+      setWinnerText(`Round ${payload.roundIndex} winner: ${payload.winnerUsername}`);
+    });
+
+    socketRef.current.on(
+      'matchEnded',
+      (payload: {
+        winner: { username: string } | null;
+        reason: string;
+        scores: PlayerScore[];
+      }) => {
+        setMatchEnded(true);
+        setPlayers(payload.scores || []);
+        if (payload.winner?.username) {
+          setWinnerText(`Match winner: ${payload.winner.username}`);
+        } else {
+          setWinnerText(`Match ended (${payload.reason}).`);
+        }
+      }
+    );
+
+    return () => {
+      socketRef.current?.emit('leaveRoom', roomId, displayName);
+      socketRef.current?.disconnect();
+    };
+  }, [displayName, roomId, userId]);
 
   const sendChat = () => {
-    if (chatInput.trim() && socketRef.current) {
-      socketRef.current.emit('message', {
-        roomId: roomId,
-        type: 'chat',
-        text: chatInput,
-        username: displayName,
-        role: role
-      });
-    }
-
+    if (!chatInput.trim() || !socketRef.current) return;
+    socketRef.current.emit('message', {
+      roomId,
+      type: 'chat',
+      text: chatInput,
+      username: displayName,
+      role,
+    });
     setChatInput('');
   };
 
-  //handles sending the buzzes
-  const sendBuzz = () => {
-    //validate answer
-    const validity = checkAnswer(answerInput, answerFormula, upper, lower, 0.001)
-    setCheck(validity);
-
-    if (validity) {
-      //if its correct we want the type to be buzzCorrect
-      if (answerInput.trim() && socketRef.current) {
-        socketRef.current.emit('message', {
-          roomId: roomId,
-          type: 'buzzCorrect',
-          text: answerInput,
-          username: displayName,
-          role: role
-        });
-
-      }
-    } else {
-      // otherwise we want it to just be a buzz
-      if (answerInput.trim() && socketRef.current) {
-        socketRef.current.emit('message', {
-          roomId: roomId,
-          type: 'buzz',
-          text: answerInput,
-          username: displayName,
-          role: role
-        });
-      }
-
-    }
-
+  const submitAnswer = () => {
+    if (!answerInput.trim() || !socketRef.current || role !== 'Competitor' || matchEnded) return;
+    socketRef.current.emit('submitAnswer', {
+      roomId,
+      roundIndex,
+      rawAnswer: answerInput,
+    });
     setAnswerInput('');
-    setIsBuzzCooldown(true);
-    //the buzz timer so we can only send buzzes every 3 seconds max
+    setIsAnswerCooldown(true);
     setTimeout(() => {
-      setIsBuzzCooldown(false);
-    }, 3000);
-
+      setIsAnswerCooldown(false);
+    }, 1200);
   };
 
   return (
-    <div className=" mx-auto p-4">
-      <div className='flex flex-row justify-between mb-2 text-xl'>
-        <div className='flex flex-row gap-3 items-center'>
-          <div className="bg-black py-3 px-5 border-rounded rounded-lg flex flex-row gap-2 scale-90 hover:scale-100 transition-transform duration-300">
-            <img src="/globe.svg" alt="Dummy icon for user 1" width={24} />
-            <Link
-              href=""
-              className='hover:text-blue-500 hover:underline'>
-              {bluePlayer}
-            </Link>
-          </div>
-          <h3 className="vs">vs</h3>
-          <div className="bg-black py-3 px-5 border-rounded rounded-lg flex flex-row gap-2 scale-90 hover:scale-100 transition-transform duration-300">
-            <img src="/globe.svg" alt="Dummy icon for user 2" width={24} />
-            <Link
-              href=""
-              className='hover:text-blue-500 hover:underline'>
-              {redPlayer}
-            </Link>
-          </div>
-
+    <div className="mx-auto p-4">
+      <div className="mb-2 flex flex-row items-center justify-between text-xl">
+        <div className="flex flex-row items-center gap-3">
+          {sortedPlayers.map((player) => (
+            <div
+              key={player.userId}
+              className="flex flex-row gap-2 rounded-lg bg-black px-5 py-3 transition-transform duration-300 hover:scale-100 scale-90"
+            >
+              <img src="/globe.svg" alt="Player icon" width={24} />
+              <Link href="" className="hover:text-blue-500 hover:underline">
+                {player.username} ({player.score})
+              </Link>
+            </div>
+          ))}
         </div>
-        <CopyButton text={roomId} buttonText='Copy Room ID' />
-
+        <CopyButton text={roomId} buttonText="Copy Room ID" />
       </div>
-      {/* put everything in a big div */}
+
+      <div className="mb-2 text-sm text-gray-600 dark:text-gray-300">
+        Role: {role} | Round {roundIndex}/{totalRounds || '?'}
+      </div>
+      {winnerText ? (
+        <div className="mb-3 font-semibold text-green-600 dark:text-green-400">{winnerText}</div>
+      ) : null}
+
       <div className="flex">
-        <div className="m-3 w-full flex flex-col justify-center text-4xl">
-          <BlockMath math={"E=mc^2"} />
+        <div className="m-3 min-h-52 w-full rounded border p-6 text-3xl dark:bg-slate-800">
+          <div className="mb-2 text-sm text-gray-500">Current Problem</div>
+          <div>{currentPrompt}</div>
         </div>
 
-        <div className="flex flex-col w-full m-3 ">
-          <div className="border flex-grow rounded p-2 h-64 overflow-y-auto mb-2 dark:bg-slate-700">
-            {messages.map((msg, idx) => (
-              msg.type === 'buzz' ?
-                <div key={idx} className="mb-1 text-red-500">({msg.role}) {msg.username} : {msg.text}</div>
-                :
-                msg.type === "buzzCorrect" ?
-                  <div key={idx} className="mb-1 text-green-600">({msg.role}) {msg.username} : {msg.text}</div>
-                  :
-                  msg.type === "system" ?
-                    <div key={idx} className="mb-1 italic text-gray-500">{msg.text}</div>
-                    :
-                    <div key={idx} className="mb-1">({msg.role}) {msg.username} : {msg.text}</div>
-
-
-            ))}
+        <div className="m-3 flex w-full flex-col">
+          <div className="mb-2 h-64 flex-grow overflow-y-auto rounded border p-2 dark:bg-slate-700">
+            {messages.map((msg, idx) =>
+              msg.type === 'buzz' ? (
+                <div key={idx} className="mb-1 text-red-500">
+                  ({msg.role}) {msg.username}: {msg.text}
+                </div>
+              ) : msg.type === 'buzzCorrect' ? (
+                <div key={idx} className="mb-1 text-green-600">
+                  ({msg.role}) {msg.username}: {msg.text}
+                </div>
+              ) : msg.type === 'system' ? (
+                <div key={idx} className="mb-1 italic text-gray-500">
+                  {msg.text}
+                </div>
+              ) : (
+                <div key={idx} className="mb-1">
+                  ({msg.role}) {msg.username}: {msg.text}
+                </div>
+              )
+            )}
             <div ref={messagesEndRef} />
           </div>
           <div className="flex gap-2">
             <input
-              className="flex-1 border rounded p-2 dark:bg-slate-700"
+              className="flex-1 rounded border p-2 dark:bg-slate-700"
               value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendChat()}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && sendChat()}
               placeholder="Type a message..."
             />
-            <button
-              className="bg-blue-500 text-white px-4 py-2 rounded"
-              onClick={sendChat}
-            >
+            <button className="rounded bg-blue-500 px-4 py-2 text-white" onClick={sendChat}>
               Send
             </button>
           </div>
         </div>
       </div>
-      <div>
-        <div className="flex gap-2 mt-2">
-          <input
-            className="flex-1 border rounded p-2 dark:bg-slate-700"
-            value={answerInput}
-            onChange={e => setAnswerInput(e.target.value)}
-            onKeyDown={!isBuzzCooldown ? e => e.key === 'Enter' && sendBuzz() : () => { }}
-            placeholder="Type an answer..."
-          />
-          <button
-            //the button should gray out when disabled
-            className={`px-4 py-2 rounded ${isBuzzCooldown
-              ? 'bg-gray-400 cursor-not-allowed'
+
+      <div className="mt-2 flex gap-2">
+        <input
+          className="flex-1 rounded border p-2 dark:bg-slate-700"
+          value={answerInput}
+          onChange={(e) => setAnswerInput(e.target.value)}
+          onKeyDown={!isAnswerCooldown ? (e) => e.key === 'Enter' && submitAnswer() : () => {}}
+          placeholder="Type your answer..."
+          disabled={role !== 'Competitor' || matchEnded}
+        />
+        <button
+          className={`rounded px-4 py-2 ${
+            isAnswerCooldown || role !== 'Competitor' || matchEnded
+              ? 'cursor-not-allowed bg-gray-400'
               : 'bg-blue-500 text-white'
-              }`}
-            onClick={sendBuzz}
-            disabled={isBuzzCooldown}
-          >
-            {isBuzzCooldown ? 'Wait...' : 'Buzz'}
-          </button>
-        </div>
+          }`}
+          onClick={submitAnswer}
+          disabled={isAnswerCooldown || role !== 'Competitor' || matchEnded}
+        >
+          {isAnswerCooldown ? 'Wait...' : 'Submit'}
+        </button>
       </div>
     </div>
   );

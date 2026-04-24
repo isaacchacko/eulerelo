@@ -16,4 +16,104 @@ model User {
   updatedAt      DateTime @updatedAt
   elo            Int      @default(1000)
   problemsSolved Int      @default(0)
+
+  matchParticipants MatchParticipant[]
+  matchesWon        Match[]            @relation("MatchWinner")
+  submissions       AnswerSubmission[]
+}
+
+enum ProblemAnswerType {
+  NUMERIC
+  EXPRESSION
+}
+
+enum MatchStatus {
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  ABORTED
+}
+
+model Problem {
+  id               String            @id @default(cuid())
+  title            String
+  promptTemplate   String
+  answerExpression String
+  answerType       ProblemAnswerType @default(NUMERIC)
+  variableSpec     Json?
+  tolerance        Float             @default(0.001)
+  difficulty       Int               @default(1)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  rounds MatchRound[]
+}
+
+model Match {
+  id             String      @id @default(cuid())
+  roomId         String      @unique
+  status         MatchStatus @default(WAITING)
+  totalRounds    Int         @default(5)
+  currentRound   Int         @default(0)
+  usedProblemIds String[]
+  createdAt      DateTime    @default(now())
+  startedAt      DateTime?
+  endedAt        DateTime?
+  winnerId       String?
+
+  winner  User?              @relation("MatchWinner", fields: [winnerId], references: [id])
+  players MatchParticipant[]
+  rounds  MatchRound[]
+}
+
+model MatchParticipant {
+  id        String   @id @default(cuid())
+  username  String
+  score     Int      @default(0)
+  joinedAt  DateTime @default(now())
+  matchId   String
+  userId    String
+
+  match       Match               @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submissions AnswerSubmission[]
+
+  @@unique([matchId, userId])
+}
+
+model MatchRound {
+  id                  String   @id @default(cuid())
+  roundIndex          Int
+  prompt              String
+  renderedPrompt      String
+  variables           Json?
+  correctNumericValue Float?
+  createdAt           DateTime @default(now())
+  endedAt             DateTime?
+  winnerParticipantId String?
+  matchId             String
+  problemId           String
+
+  match       Match               @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  problem     Problem             @relation(fields: [problemId], references: [id], onDelete: Restrict)
+  submissions AnswerSubmission[]
+
+  @@unique([matchId, roundIndex])
+}
+
+model AnswerSubmission {
+  id                String   @id @default(cuid())
+  rawAnswer         String
+  normalizedAnswer  String
+  isCorrect         Boolean
+  submittedAt       DateTime @default(now())
+  submittedAfterMs  Int?
+  roundId           String
+  participantId     String
+  userId            String
+
+  round       MatchRound        @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  participant MatchParticipant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

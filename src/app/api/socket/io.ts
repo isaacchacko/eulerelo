@@ -1,15 +1,17 @@
 import { Server } from "socket.io";
 import type { NextApiRequest, NextApiResponse } from "next";
+import type { Server as NetServer } from "http";
 
-const SocketHandler = (req: NextApiRequest, res: NextApiResponse) => {
+type NextApiResponseWithSocket = NextApiResponse & {
+  socket: NextApiResponse["socket"] & {
+    server: NetServer & {
+      io?: Server;
+    };
+  };
+};
 
-  // optional chaining because res.socket can be null
-
-  // type assertion as any because res.socket is derived from the
-  // net library which doesn't come base with the server member. the
-  // code only works because NextJS attaches the server property at runtime
-
-  const server = (res.socket as any)?.server;
+const SocketHandler = (_req: NextApiRequest, res: NextApiResponseWithSocket) => {
+  const server = res.socket?.server;
 
   if (!server.io) {
     const io = new Server(server, {

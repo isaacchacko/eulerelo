@@ -1,180 +1,94 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { useParams } from 'next/navigation';
-import { io, Socket } from 'socket.io-client';
-import { useSession } from 'next-auth/react';
-import mathPhoto from '../../assets/mathProb.png';
-import { evaluate, parse } from "mathjs";
+import { useMemo, useState } from 'react';
 
-const upper = 5;
-const lower = 1;
-const answerFormula = "log(x)-log(y)";
+type PracticeResult = {
+  answer: string;
+  correct: boolean;
+};
 
-type MessageType = 'chat' | 'buzz' | 'buzzCorrect';
+type GeneratedProblem = {
+  prompt: string;
+  value: number;
+};
 
-
-interface ChatMessage {
-  text: string;
-  type: MessageType;
+function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function checkAnswer(
-  userAnswer: string,
-  answerFormula: string,
-  x: number,
-  y: number,
-  tolerance: 0.001
-): boolean {
-  try {
-    const scope = { x, y };
-    const parsedFormula = parse(answerFormula);
-    const correct = parsedFormula.evaluate({ x, y }) as number;
-    let fixedForLog = "";
-    //check for ln and log
-    if (userAnswer.includes("log")) {
-      fixedForLog = userAnswer.replaceAll(")", ",10)")
-    } else {
-      fixedForLog = userAnswer
-    }
+function generateProblem(): GeneratedProblem {
+  const x = randomInt(2, 20);
+  const y = randomInt(1, 12);
+  const z = randomInt(1, 15);
+  const operators = ['+', '-', '*'];
+  const operation = operators[randomInt(0, operators.length - 1)];
 
-    const fixedAns = fixedForLog.replaceAll("ln", "log");
-    //try to evaluate it as a number
-    let userAns = parse(fixedAns).evaluate(scope);
-    console.log(`user answered: ${userAns}`);
-
-
-    //means it is neither an accepted number or formula
-    if (isNaN(userAns)) return false;
-
-    //return whether the answer is within tolerance
-    return Math.abs(userAns - correct) <= tolerance;
-  } catch (error) {
-    console.error("validation error: ", error);
-    return false;
+  if (operation === '+') {
+    return { prompt: `Compute ${x} + ${y} + ${z}`, value: x + y + z };
   }
+  if (operation === '-') {
+    return { prompt: `Compute ${x * 2} - ${y} + ${z}`, value: x * 2 - y + z };
+  }
+  return { prompt: `Compute ${x} * ${y} - ${z}`, value: x * y - z };
 }
 
-export default function practicePage() {
-
-  const { data: session } = useSession();
-
-  const params = useParams();
-  const roomId = params.roomId as string;
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+export default function PracticePage() {
+  const [problem, setProblem] = useState<GeneratedProblem>(() => generateProblem());
   const [answerInput, setAnswerInput] = useState('');
-  const socketRef = useRef<Socket | null>(null);
-  const [check, setCheck] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [isBuzzCooldown, setIsBuzzCooldown] = useState(false);
+  const [history, setHistory] = useState<PracticeResult[]>([]);
 
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
+  const score = useMemo(() => history.filter((item) => item.correct).length, [history]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
-
-      return () => {
-        socketRef.current?.disconnect();
-      };
-    }
-  }, [roomId]);
-
-
-  //handles sending the buzzes
-  const sendBuzz = () => {
-
-    //validate answer
-    const validity = checkAnswer(answerInput, answerFormula, upper, lower, 0.001)
-    setCheck(validity);
-
-    if (validity) {
-
-      if (answerInput.trim() && socketRef.current) {
-        socketRef.current.emit('buzzCorrect', {
-          roomId,
-          answer: answerInput,
-          username: session?.user?.name
-        });
-        const newMessage: ChatMessage = { text: `you answered: ${answerInput}`, type: 'buzzCorrect' };
-        setMessages(prev => [...prev, newMessage]);
-      }
-    } else {
-
-      if (answerInput.trim() && socketRef.current) {
-        socketRef.current.emit('buzz', {
-          roomId,
-          answer: answerInput,
-          username: session?.user?.name
-        });
-      }
-      const newMessage: ChatMessage = { text: `you answered: ${answerInput}`, type: 'buzz' };
-      setMessages(prev => [...prev, newMessage]);
-    }
-
-
-
-
-
+  const submitAnswer = () => {
+    const numeric = Number(answerInput);
+    const correct = Number.isFinite(numeric) && Math.abs(numeric - problem.value) < 0.0001;
+    setHistory((prev) => [...prev, { answer: answerInput, correct }]);
     setAnswerInput('');
-    setIsBuzzCooldown(true);
-    //the buzz timer so we can only send buzzes every second max
-    setTimeout(() => {
-      setIsBuzzCooldown(false);
-    }, 1000);
-
   };
+
+  const nextProblem = () => {
+    setProblem(generateProblem());
+  };
+
   return (
-    <div className="max-w-full mx-auto p-4">
-      <h2 className="text-xl text-center mb-2">Room: {"Practice Room"}</h2>
-      {/* put everything in a big div */}
-      <div className="flex">
-        <div className=" m-2 w-full">
-          {/* THIS IS WHERE THE IMAGE FOR THE PROBLEM IS */}
-          <img className="w-3/4 mx-auto" src={mathPhoto.src} alt="MATHs" />
-        </div>
+    <div className="mx-auto max-w-3xl p-6">
+      <h1 className="mb-1 text-2xl font-bold">Practice Room</h1>
+      <p className="mb-6 text-sm text-gray-600 dark:text-gray-300">
+        Warm up with quick arithmetic rounds before jumping into live matchmaking.
+      </p>
 
-        <div className="border rounded p-2 overflow-y-auto m-2 w-1/2 bg-gray-100">
-          {messages.map((msg, idx) => (
-            msg.type == 'buzz' ?
-              <div key={idx} className="mb-1 text-red-600"   >{msg.text}</div>
-              :
-              msg.type == "buzzCorrect" ?
-                <div key={idx} className="mb-1 text-green-600"   >{msg.text}</div>
-                :
-                <div key={idx} className="mb-1">{msg.text}</div>
+      <div className="mb-4 rounded border p-6 text-3xl dark:bg-slate-800">{problem.prompt}</div>
 
-          ))}
-          <div ref={messagesEndRef} />
-
-
-
-        </div>
+      <div className="mb-6 flex gap-2">
+        <input
+          className="flex-1 rounded border p-2 dark:bg-slate-700"
+          value={answerInput}
+          onChange={(e) => setAnswerInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && submitAnswer()}
+          placeholder="Type your answer..."
+        />
+        <button className="rounded bg-blue-600 px-4 py-2 text-white" onClick={submitAnswer}>
+          Check
+        </button>
+        <button className="rounded border px-4 py-2" onClick={nextProblem}>
+          Next
+        </button>
       </div>
-      <div>
-        <div className="flex gap-2 mt-2">
-          <input
-            className="flex-1 border rounded p-2"
-            value={answerInput}
-            onChange={e => setAnswerInput(e.target.value)}
-            onKeyDown={!isBuzzCooldown ? e => e.key === 'Enter' && sendBuzz() : () => { }}
-            placeholder="Type an answer..."
-          />
-          <button
-            //the button should gray out when disabled
-            className={`px-4 py-2 rounded ${isBuzzCooldown
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-500 text-white'
-              }`}
-            onClick={sendBuzz}
-            disabled={isBuzzCooldown}
-          >
-            {isBuzzCooldown ? 'Wait...' : 'Buzz'}
-          </button>
+
+      <div className="rounded border p-4 dark:bg-slate-800">
+        <p className="mb-2 font-medium">
+          Score: {score}/{history.length}
+        </p>
+        <div className="max-h-52 space-y-2 overflow-y-auto text-sm">
+          {history.length === 0 ? (
+            <p className="text-gray-500">No attempts yet.</p>
+          ) : (
+            history.map((attempt, idx) => (
+              <p key={`${attempt.answer}-${idx}`} className={attempt.correct ? 'text-green-600' : 'text-red-600'}>
+                Attempt {idx + 1}: {attempt.answer || '(empty)'} - {attempt.correct ? 'correct' : 'incorrect'}
+              </p>
+            ))
+          )}
         </div>
       </div>
     </div>

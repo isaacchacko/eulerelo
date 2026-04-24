@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev\" \"nodemon ./src/socket-server/server.js\"",
-    "build": "prisma generate --no-engine && next build",
+    "dev": "next dev",
+    "build": "prisma generate && next build",
     "start": "next start",
     "start:socket": "node ./src/socket-server/server.js",
+    "prisma:seed": "node ./prisma/seed.js",
     "lint": "next lint",
-    "postinstall": "prisma generate --no-engine"
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "node ./prisma/seed.js"
@@ -20,10 +21,11 @@
     "@vercel/analytics": "^1.5.0",
     "bcryptjs": "^2.4.3",
     "cookies-next": "^4.1.1",
+    "dotenv": "^17.4.2",
     "geist": "^1.4.2",
     "katex": "^0.16.22",
     "mathjs": "^14.4.0",
-    "next": "^15.2.3",
+    "next": "^15.3.8",
     "next-auth": "^4.24.11",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -40,11 +42,9 @@
     "@types/react-dom": "^18",
     "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.17",
-    "concurrently": "^9.1.2",
-    "eslint": "^8.56.0",
-    "eslint-config-next": "14.1.0",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^15.3.8",
     "express": "^5.1.0",
-    "nodemon": "^3.1.10",
     "postcss": "^8.4.35",
     "prisma": "^6.6.0",
     "tailwindcss": "^3.4.1",

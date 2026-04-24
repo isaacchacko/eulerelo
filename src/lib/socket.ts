@@ -4,10 +4,7 @@ let socket: Socket;
 
 export const connectSocket = () => {
   if (!socket) {
-    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL!, {
-      path: "/api/socket/io",
-      transports: ["websocket"]
-    });
+    socket = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL!);
   }
   return socket;
 };

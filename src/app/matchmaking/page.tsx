@@ -16,18 +16,23 @@ const MatchmakingPage = () => {
 
     if (!session) return;
     if (!session.user) return;
+    const userId = (session.user as { id?: string }).id;
+    if (!userId || !session.user.name) return;
 
     socket = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
-    socket.emit('joinMatchmaking', session.user.name);
+    socket.emit('joinMatchmaking', {
+      userId,
+      username: session.user.name,
+    });
 
-    socket.on('matched', (roomId: string) => {
+    socket.on('matched', ({ roomId }: { roomId: string }) => {
       router.push(`/room/${roomId}`);
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [router]);
+  }, [router, session]);
 
   return (
     <div className="flex flex-col items-center justify-center h-screen">
