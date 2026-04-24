@@ -13,13 +13,14 @@ const MatchmakingPage = () => {
   const { data: session } = useSession();
 
   useEffect(() => {
-
     if (!session) return;
     if (!session.user) return;
     const userId = (session.user as { id?: string }).id;
     if (!userId || !session.user.name) return;
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL;
+    if (!socketUrl) return;
 
-    socket = io(process.env.NEXT_PUBLIC_SOCKET_SERVER_URL);
+    socket = io(socketUrl);
     socket.emit('joinMatchmaking', {
       userId,
       username: session.user.name,
@@ -28,8 +29,15 @@ const MatchmakingPage = () => {
     socket.on('matched', ({ roomId }: { roomId: string }) => {
       router.push(`/room/${roomId}`);
     });
+    socket.on('matchmakingError', (message: string) => {
+      // Surface server-side matchmaking failures in deployed environments.
+      console.error('[matchmaking] server error:', message);
+      alert(message);
+    });
 
     return () => {
+      socket.off('matched');
+      socket.off('matchmakingError');
       socket.disconnect();
     };
   }, [router, session]);

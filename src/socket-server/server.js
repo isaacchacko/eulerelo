@@ -3,7 +3,7 @@ try {
   // In local dev, load .env if dotenv is available.
   // In Railway/production, env vars are injected by the platform.
   require('dotenv').config();
-} catch (_error) {}
+} catch {}
 const { Server } = require('socket.io');
 const { createServer } = require('http');
 const { v4: uuidv4 } = require('uuid');
@@ -392,14 +392,20 @@ io.on('connection', (socket) => {
         return;
       }
 
-      if (!queue.some((queued) => queued.userId === player.userId)) {
-        queue.push({
-          userId: player.userId,
-          username: player.username,
-          matchmakingSocketId: socket.id
-        });
-        console.log(`${player.username} joined matchmaking queue`);
+      if (queue.some((queued) => queued.userId === player.userId)) {
+        io.to(socket.id).emit(
+          'matchmakingError',
+          'You are already in queue on another tab/device. Use two different accounts to start a match.'
+        );
+        return;
       }
+
+      queue.push({
+        userId: player.userId,
+        username: player.username,
+        matchmakingSocketId: socket.id
+      });
+      console.log(`${player.username} joined matchmaking queue`);
 
       await createMatchFromQueue();
     } catch (error) {
