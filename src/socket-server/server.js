@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-require('dotenv').config();
+try {
+  // In local dev, load .env if dotenv is available.
+  // In Railway/production, env vars are injected by the platform.
+  require('dotenv').config();
+} catch (_error) {}
 const { Server } = require('socket.io');
 const { createServer } = require('http');
 const { v4: uuidv4 } = require('uuid');
