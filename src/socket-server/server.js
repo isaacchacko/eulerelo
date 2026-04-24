@@ -3,7 +3,7 @@ try {
   // In local dev, load .env if dotenv is available.
   // In Railway/production, env vars are injected by the platform.
   require('dotenv').config();
-} catch {}
+} catch { }
 const { Server } = require('socket.io');
 const { createServer } = require('http');
 const { v4: uuidv4 } = require('uuid');
@@ -20,7 +20,7 @@ const io = new Server(httpServer, {
     origin: [
       "http://localhost:3000",
       "https://eulerelo.up.railway.app",
-      "https://www.eulerelo.com"
+      "https://eulerelo.com"
     ],
     methods: ["GET", "POST"]
   }
@@ -286,7 +286,7 @@ async function finishMatch(matchState, reason, forcedWinnerUserId = null) {
     await prisma.matchRound.update({
       where: { id: matchState.currentRoundId },
       data: { endedAt: new Date() }
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   await prisma.$transaction([
