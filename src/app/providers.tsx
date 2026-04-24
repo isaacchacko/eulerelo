@@ -21,7 +21,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check for saved theme preference or system preference
-    const savedTheme = localStorage.getItem('theme') as Theme;
+    const canReadStorage =
+      typeof window !== 'undefined' &&
+      typeof window.localStorage !== 'undefined' &&
+      typeof window.localStorage.getItem === 'function';
+    const savedTheme = canReadStorage ? (window.localStorage.getItem('theme') as Theme) : null;
     const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     setTheme(savedTheme || systemTheme);
   }, []);
@@ -31,7 +35,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       // Update document class and localStorage when theme changes
       document.documentElement.classList.remove('light', 'dark');
       document.documentElement.classList.add(theme);
-      localStorage.setItem('theme', theme);
+      if (
+        typeof window !== 'undefined' &&
+        typeof window.localStorage !== 'undefined' &&
+        typeof window.localStorage.setItem === 'function'
+      ) {
+        window.localStorage.setItem('theme', theme);
+      }
     }
   }, [theme, mounted]);
 

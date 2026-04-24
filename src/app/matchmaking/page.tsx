@@ -16,16 +16,12 @@ const MatchmakingPage = () => {
     if (!session) return;
     if (!session.user) return;
     const userId = (session.user as { id?: string }).id;
-    if (!userId || !session.user.name) return;
+    const username = session.user.name;
+    if (!userId || !username) return;
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_SERVER_URL;
     if (!socketUrl) return;
 
     socket = io(socketUrl);
-    socket.emit('joinMatchmaking', {
-      userId,
-      username: session.user.name,
-    });
-
     socket.on('matched', ({ roomId }: { roomId: string }) => {
       router.push(`/room/${roomId}`);
     });
@@ -34,10 +30,17 @@ const MatchmakingPage = () => {
       console.error('[matchmaking] server error:', message);
       alert(message);
     });
+    socket.on('connect', () => {
+      socket.emit('joinMatchmaking', {
+        userId,
+        username,
+      });
+    });
 
     return () => {
       socket.off('matched');
       socket.off('matchmakingError');
+      socket.off('connect');
       socket.disconnect();
     };
   }, [router, session]);
